@@ -1,0 +1,58 @@
+$!> X.COM -- Execute a command procedure, defaulting to COM_FILE or EDIT_FILE.
+$!
+$! I'm not sure this is actually useful.
+$!-----------------------------------------------------------------------------
+$       file = ""
+$       i = 1
+$       if (p'i' .eqs. "") .or. (p1 .eqs. "--") then goto found_args
+$	file = p'i'
+$ found_args:
+$ 10$:
+$       i = i + 1
+$       if (p'i' .eqs. "") then goto 19$ ! no more args
+$       n = i - 1
+$       p'n' = p'i'
+$       p'i' = ""
+$       goto 19$
+$ 19$:
+$       write sys$output "file: ", file, " args: ", p1, " ", p2, " ", p3, " ", p4, " ", p5, " " , p6, " ", p7, " ", p8
+$       if file .nes. ""
+$       then
+$           define com_file 'file'
+$           goto file_round
+$       else
+$           file = f$trnlnm ("COM_FILE")
+$           if file .nes. ""
+$           then
+$               inquire offer "Execute file <''file'>"
+$               if offer .nes. ""
+$               then
+$                   file = offer
+$                   define com_file 'file'
+$               endif 
+$               goto file_found
+$           endif
+$           file = f$trnlm ("EDIT_FILE")
+$           if file .nes. ""
+$           then
+$               file = f$parse (".com", file)
+$               inquire offer "Execute file <''file'>"
+$               if offer .nes. ""
+$               then
+$                   file = offer
+$                   define com_file 'file'
+$               endif
+$           if file .eqs. ""
+$           then
+$               write sys$error "No file specified to execute!"
+$               exit
+$           else
+$               define com_file 'file'
+$           endif
+$       endif
+$ file_found:
+$       if 
+$       write sys$output "Executing ", f$edit ("@''file' ''p1' ''p2' ''p3' ''p4' ''p5' ''p6' ''p7' ''p8'", "COMPRESS,TRIM")
+$       @'file' "''p1'" "''p2'" "''p3'" "''p4'" "''p5'" "''p6'" "''p7'" "''p8'"
+$       exit $STATUS
+

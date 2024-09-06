@@ -1,0 +1,106 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 11:53:16 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+!> APPLY_TO.SDCL -- run command in P2&P3 on EACH file matching filespec in P1
+###############################################################################
+### Format:
+###     $ apply_to <file-spec> <command-head> [<command-tail>]
+### Example:
+###     $ apply_to *.bas "basic/list/debug/cross"
+### Description:
+###     APPLY_TO applies the command in p2 to EACH of the files that
+### match the (possibly wildcarded) file specification in p1.  p3 is
+### appended to the command *after* the file name.
+###############################################################################
+   ## Don't turn off verifying, because if -d is specified you can't tell 
+   ## what is happening.
+   wso = "write sys$output"
+   wse = "write sys$error"
+   inq = "inquire/nopun"
+   true = (1 .eq 1)
+   false = .not. true
+   quiet = %x10000000
+
+   debugging = false
+   strip = false
+   verbose = false
+   
+   
+   i = 1                                #start with first parameter
+   ## Process options till none left
+   while (f$extract(0, 1, p'i') .eqs. "-") {
+      opt = f$extract(1, 1, p'i')
+      if (opt .eqs. "D") {              # Danger, Will Robinson!  Danger!
+         debugging = true
+      } else if ((opt .eqs. "V")) {
+          verbose = true
+      } else if ((opt .eqs. "S")) {
+          strip = true
+      } else if ((opt .eqs. "H") .or. (opt .eqs. "?")) {
+         goto usage
+      } else {
+          wse "apply_to: Unrecognized option: ", p'i'
+          goto usage
+      }
+      i = i + 1
+   }
+
+   iplus1 = i + 1
+   iplus2 = i + 2
+   filename = p'i'
+   command_head = p'iplus1'
+   command_tail = p'iplus2'
+
+   ## Now days I think if no parameters are specified it is better to print 
+   ## a usage message and exit.
+   if (filename .eqs. "") goto usage
+
+   ##if (filename .eqs. "")
+   ##    inq filename "_Filespec: "
+   ##if (filename .eqs. "")
+   ##    exit
+   ##if (command_head .eqs. "")
+   ##    inq command_head "_Command: "
+
+
+   ## If version not specified in filename, don't supply to command
+   strip_version = f$locate(";", filename) .eq. f$length(filename)
+
+   i = 0
+   f = f$search(filename)
+   while (f .nes. "") {
+       define/user sys$input sys$command
+       if (strip_version) f = f - f$parse(f,,,"VERSION")
+       if (strip) f = f - f$parse (f,,, "DEVICE") - f$parse (f,,, "DIRECTORY")
+       if (debugging) wse "f: ", f
+       if (verbose) wse command_head, " ", f, " ", command_tail
+       'command_head' 'f' 'command_tail'
+       i = i + 1
+       f = f$search(filename)
+   }
+   wse "''i' files processed"
+The_End:
+   exit
+
+usage:
+    type sys$input
+    // usage: apply_to [OPTION ...] FILESPEC COMMANDHEAD [COMMANDTAIL]
+    // where:
+    // FILESPEC       - Is the VMS file specification matching the files you 
+    //                  want to apply COMMANDHEAD to.  Wildcards are allowed.
+    // COMMANDHEAD    - Is the command you want to apply to each matching 
+    //                  filename.
+    // COMMANDTAIL    - Is the optional tail end of the command you want to 
+    //                  appply to each matching filename.
+    //
+    // The command as a whole is applied to EACH of the matching files in turn.
+    //
+    // Options:
+    // -d             - Turn on debugging.
+    // -h, -?         - Display this message.
+    // -s             - Strip device and directory from the resulting filenames.
+    // -v             - Turn on verbose messages.
+    exit 2 .or. quiet
+%%E 1

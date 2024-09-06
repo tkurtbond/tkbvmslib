@@ -1,0 +1,68 @@
+procedure tkb_space(number)
+  local
+    c, spaces;
+  
+  spaces := "";
+  c := 0;
+  loop
+    exitif c >= number;
+    spaces := spaces + " ";
+    c := c + 1;
+  endloop;
+  return(spaces);
+  
+endprocedure ! tkb_space(number)
+
+
+procedure tkb_worktime
+  local
+    day, month, year, description, time, old_description, old_time;
+  
+  position(end_of(current_buffer));
+  year := read_line('Year: ');
+  if year = "" then
+    return 0;
+  endif;
+  if length(year) < 2 then
+    year := '0' + year;
+  endif;
+  month := read_line('Month: ');
+  if month = "" then
+    return 0;
+  endif;
+  if length(month) < 2 then
+    month := '0' + month;
+  endif;
+  old_description := "";
+  old_time := "";
+  day := read_line('Day: ');
+  loop
+    exitif day = "";                                              
+    if length(day) < 2 then
+      day := '0' + day;
+    endif;
+    time := read_line('Time: ');
+    if time = "" then 
+      time := old_time;
+    endif;
+    time := time + tkb_space(20 - length(time));
+    description := read_line('Description: ');
+    if description = "" then
+      description := old_description;
+    endif;
+    copy_text(month+'-'+day+'-'+year+'  '+time+'  '+description);
+    split_line;
+    update(current_window);
+    old_description := description;
+    old_time := time;
+    day := read_line('Day: ');
+  endloop;
+  append_line;
+
+endprocedure ! tkb_worktime
+
+
+define_key('tkb_worktime', key_name('T', shift_key));
+message('TIMES.TPU installed, hit Gold T to start adding hours.');
+! tkb$s := read_line('Hit Return to continue...');
+

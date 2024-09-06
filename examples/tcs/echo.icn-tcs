@@ -1,0 +1,16 @@
+%%s 0/0/0
+%%d D 1.1 04-Sep-24 10:27:20 tkb 1 0
+%%c Simple Icon impelmentation of the echo command.
+%%T
+%%I 1
+procedure main (args)
+   local i
+   i := 0
+   every arg := !args do {
+      if i > 0 then writes (" ")
+      writes (arg)
+      i +:= 1
+   }
+   write ()
+end # main
+%%E 1

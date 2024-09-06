@@ -1,0 +1,27 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:50 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+program edit$and_nuls
+    option type = explicit, constant type = integer, &
+        size = integer long, size = real double 
+
+    external long function fio_create_text (long, string, string)
+
+    declare string nuls, edited_nuls, long stat
+
+    nuls = chr$(0) + chr$(0) + chr$(0) + chr$(0) + chr$(0) + "trailing"
+
+    stat = fio_create_text (1, 'mpl$data:[mpl.tkb.examples]edit$and_nuls.lis', )
+    print #1; 'nuls: "'; nuls; '"'
+    print #1; 'edit$ (nuls, 4+8+128): "'; edit$ (nuls, 4+8+128); '"'
+
+    edited_nuls = edit$ (nuls, 4+8+128)
+    if edited_nuls <> "trailing" then
+        print #1, "not = trailing"
+    else
+        print #1, "is = trailing"
+    end if
+end program ! edit$and_nuls
+%%E 1

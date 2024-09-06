@@ -1,0 +1,45 @@
+#module TEST_EDIT "V1.03"
+
+/*
+  This is a very simple program to demonstrate calling BAS$EDIT from a
+  C language program.
+
+  B. Z. Lederman
+
+  Addendum by J.H.: On Alpha, CC/TIE , and LINK/NONATIVE
+
+*/
+
+#include descrip
+
+#include "bas$edit.h"			/* use local definitions	*/
+
+/*
+  In the original, the word "it" starts with an eight-bit character
+  (an "i" with two dots over it) and there are embedded tabs.
+*/
+
+$DESCRIPTOR (instr, "This string   has stuff 	ïn it");
+
+struct dsc$descriptor_s outstr = {0, DSC$K_DTYPE_T, DSC$K_CLASS_D, 0};
+
+unsigned long int status;
+
+test_edit ()
+MAIN_PROGRAM
+{
+  status = LIB$PUT_OUTPUT (&instr);
+
+  BAS$EDIT (&outstr, &instr, (BAS$M_COMPRESS | BAS$M_UPCASE) );
+
+  status = LIB$PUT_OUTPUT (&outstr);
+  /*
+    Watch what happens to the eight bit character when parity is
+    stripped off.
+  */
+  BAS$EDIT (&outstr, &instr, (BAS$M_COLLAPSE | BAS$M_NOPARITY) );
+
+  status = LIB$PUT_OUTPUT (&outstr);
+
+  exit (status);
+}

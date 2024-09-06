@@ -1,0 +1,9 @@
+procedure main()
+  local v1, v2
+
+  v1 := &null
+  v2 := 1
+  if \v1 then write ("\\v1") else write ("not \\v1")
+  if \v2 then write ("\\v2") else write ("not \\v2")
+
+end # main

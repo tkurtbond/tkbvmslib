@@ -1,0 +1,28 @@
+procedure main ()
+  local i, unprintable, day, month, year, time, filename
+
+  unprintable := &cset[1+:32]++' \t'++&cset[127:0]   # all 'unprintable' chars
+  i := 0
+
+  while line := read () do {
+    ## Get rid of header lines
+    if line[1] == "-" then break
+  }
+
+  while line := read () do {
+    ## Found the trailer.
+    if line[1] == "-" then break
+    i +:= 1
+    day := line[25:27]
+    day := reverse(trim(reverse(trim(day,unp)),unp))    
+    month := map (line[28:31], &lcase, &ucase)
+    year := "19" || line[32:34] 
+    time := line[35:43]
+    date := trim (day) || "-" || month || "-" || year
+    datetime := date || " " || time
+    filename := line[51:0]
+    # write (i, ": ", line)
+    #write ("day: ", day, " month: ", month, " year: ", year, " time: ", time, " filename: ", filename)
+    write ("$ file /creation=\"", datetime, "\"/revision=\"", datetime, "\" ", filename)
+  }
+end # main 

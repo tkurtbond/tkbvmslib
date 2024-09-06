@@ -1,0 +1,80 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:24:58 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+!> FLATTEN.SDCL -- Flatten a hierachial directory structure, with renaming
+###############################################################################
+###
+###     This program takes the files in a hierachial directory structure and
+### makes copies of them in a single, flat directory, renaming each file with
+### a unique name, and preserving the mapping between the new names and the
+### old names.  It is useful when you have to tranport or store files in a flat
+### directory structure; for instance, if you are putting files in an ARC for
+### transfer to microcomputer.
+###
+### Usage:
+###     @flatten <from-spec> [<destination-dir>]
+### <from-spec>
+###     wildcard file specification which matches the files to flatten;
+###     for example, [.src...]*.*, which would flatten all the files in 
+###     in [.src] and all the directories it includes.
+### <destination-dir>
+###     Directory in which to put the flattened files.  If it is omitted,
+###     the files are put in the current directory.
+###
+###     After FLATTEN is run, the destination directory will contain the file
+### 0000.LST, which contains the mapping from the new files names to the
+### original file names, and one file for each of the original files, which
+### are named 0001, 0002, etc.  Note that all files with an extension of
+### ".DIR" are ignored, since they should be directories.
+###############################################################################
+    TRUE = -1
+    FALSE = 0
+    wso = "write sys$output"
+    wse = "write sys$error"
+
+    root_spec = p1
+    if (root_spec .eqs. "") {
+        wse "usage: flatten <input-files-spec> [<destination-directory>]"
+        exit
+    }
+    destination = p2
+    if (destination .eqs. "")           #use current directory as destination
+        destination = f$environment("DEFAULT")
+
+    options = p3
+    if (f$locate("V", options) .ne. f$length(options))
+        verbose = TRUE
+    else
+        verbose = FALSE
+
+    ##The log file contains a mapping from the new names to the old names
+    log_file_name = destination + "0000.lst"
+    open/write log_file 'log_file_name'
+    write log_file "# ", destination, " ", root_spec
+
+    num_files = 0                       #number of files processed so far
+    repeat {
+        file_spec = f$search(root_spec, 1)
+        if (file_spec .eqs. "")
+            break                       #no more files
+        if (f$parse(file_spec,,, "TYPE") .eqs. ".DIR")
+            next                        #skip all directory files
+            
+        num_files = num_files + 1
+        out_file_spec = f$fao("!4ZL", num_files)
+#        write log_file f$fao("!AS !AS", out_file_spec, file_spec\
+#	    - f$parse(file_spec,,, "DEVICE"))
+        write log_file f$fao("!AS !AS", out_file_spec, file_spec)
+	if (verbose)
+	    write sys$output f$fao("!AS !AS", out_file_spec, file_spec)
+        copy 'file_spec' 'destination''out_file_spec'.
+    }
+
+    close log_file
+
+The_End:
+    exit
+        
+%%E 1

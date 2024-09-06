@@ -1,0 +1,62 @@
+From:	MX%"DICLEMENTE@merlin.hood.edu" 19-NOV-1991 16:11:28.07
+To:	TKB
+CC:	
+Subj:	A nudder one 4 u
+
+Return-Path: <@MTNET2.WVNET.EDU:DICLEMENTE@merlin.hood.edu>
+Received: from MERLIN.HOOD.EDU by MTNET2.WVNET.EDU (MX V2.3) with SMTP; Tue, 19
+          Nov 1991 16:11:15 EST
+Date: Tue, 19 Nov 1991 16:13:59 -0500 (EST)
+From: DICLEMENTE@merlin.hood.edu
+Message-ID: <911119161359.414b@merlin.hood.edu>
+Subject: A nudder one 4 u
+To: TKB@MTNET2.WVNET.EDU
+X-Vmsmail-To: SMTP%"TKB@MTNET2.WVNET.EDU"
+
+From:	SPOCK::DICLEMENTE   19-NOV-1991 16:13:12.23
+To:	MERLIN::DICLEMENTE
+CC:
+Subj:
+
+Kurt, here is another one that allows you to search thru the output of
+"SHOW DEV/FILE/NOSYSTEM" for a phrase, such as
+
+$ WHOHAS COURSE.DTA
+OR
+$ WHOHAS .FILES]STUDENT
+ETC.  just make a symbol WHOHAS = running the following com file, enjoy.
+
+--------------------------------------------------------------------------------
+$ !
+$ ! WHOHAS.COM Shows who (if anybody) has a specific file open
+$ !
+$ ON CONTROL_Y THEN GOTO WRAP_UP
+$ WSO = "WRITE SYS$OUTPUT"
+$ INQ = "INQ/NOPUN"
+$ !
+$ CLS 		       !CLEAR THE SCREEN
+$ !
+$ WSO ""
+$ WSO "Looking to see who has ''P1' open..."
+$ WSO ""
+$ SHOW DEV/FILE/NOSYSTEM/OUT=ALLFILES.DAT DUA0:
+$ OPEN/READ TEMP ALLFILES.DAT
+$ !
+$ START:
+$    READ TEMP LINE/ERR=THE_END/END=THE_END
+$    IF F$LOCATE("''P1'",LINE) .NE. F$LENGTH(LINE)
+$    THEN
+$		WHOLELEN  = F$LENGTH(LINE)
+$		BEGSTRING = F$LOCATE("''P1'",LINE)
+$		STRINGLEN = F$LENGTH(''P1')
+$		BEGIN     = F$EXTRACT(0,BEGSTRING,LINE)
+$		STRING    = F$EXTRACT(BEGSTRING,STRINGLEN,LINE)
+$		STRING    = "[1m" + STRING + "[0;0m"
+$		END       = F$EXTRACT(BEGSTRING+STRINGLEN,F$LENGTH(LINE),LINE)
+$		LINE      = BEGIN + STRING + END
+$       WSO "''LINE'"
+$    ENDIF
+$    GOTO START
+$ THE_END:
+$ CLOSE TEMP
+$ DELETE/NOCONF ALLFILES.DAT;*

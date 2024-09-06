@@ -1,0 +1,11 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:24 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ define/user sys$output dirmail.lis
+$ mail
+dir/fo
+exit
+$ exit
+%%E 1

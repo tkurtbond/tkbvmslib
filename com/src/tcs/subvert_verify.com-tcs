@@ -1,0 +1,10 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:31 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ verifying = 'f$verify(f$type(PROCNAME_verify) .nes. "")'
+$ exit (1 .or. (f$verify(verifying) .and. 0))
+$ quiet = %x10000000
+$ exit (1 .or. quiet .or. (f$verify(verifying) .and. 0))
+%%E 1

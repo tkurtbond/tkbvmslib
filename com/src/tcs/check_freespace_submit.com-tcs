@@ -1,0 +1,8 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:23 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$! Could add -user=system 
+$ @ml:requeue -daily=1:00 ml:check_freespace.com
+%%E 1

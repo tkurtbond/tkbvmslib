@@ -1,0 +1,76 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:23 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$!	The main procedure for the ROU application
+$
+$!	1.  Block use of dangerous "external" personal commands.
+$
+$	backup = "backup"
+$
+$!	2.  Save the current message and privilege settings.
+$
+$	saved_message = f$environment("MESSAGE")
+$	saved_privs   = f$setprv("all")
+$
+$!	3. Devine some simple status codes for the application
+$
+$	rou__status  = %x10428000
+$	rou__success = rou__status + %x0001
+$	rou__ctrly   = rou__status + %x000C
+$
+$!	4. Establish the interrupt and error handlers.  Make sure the 
+$!	summary status indicates success if we exit normally.
+$
+$	status = rou__success
+$	on control_y then goto control_y
+$	on warning then goto error
+$
+$!	5.  Establish the message and privilge environment.
+$
+$	set message/facility/severity/identifier/text
+$	junk = f$setprv(saved_privs+"PRMMBX,SYSPRV")
+$
+$	6.  Set up some useful symbols for the application.
+$
+$	ask	= "read sys$command /prompt="
+$	define	= "define/nolog"
+$	libcall = "@rou_system:rou_library"
+$	false	= 0
+$	true	= 1
+$	display = "write sys$output"
+$	undefine = "deassign"
+$
+$!	7. Begin the Application.
+$
+$
+$	goto exit
+$
+$!	The interrupt handler sets the summary status to indicate
+$!	that <CTRL/y> was pressed and then joins the cleanup code.
+$
+$control_y:
+$	status = rou_ctrly
+$	goto exit
+$
+$!	The error handler sets the summary status to the "offending"
+$!	status and also joins the cleanup code.
+$
+$error:
+$	status = $status
+$	goto exit
+$
+$!	The exit routine first performs cleanup.  The it restores the 
+$!	original DCL environment.  Finally it exits with the summary
+$!	status.
+$
+$exit:
+$	set noon
+$
+$!	cleanup code
+$
+$	set message 'saved_message
+$	junk = f$setprv(saved_privs)
+$	exit status .or. %x10000000
+%%E 1

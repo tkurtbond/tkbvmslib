@@ -1,0 +1,25 @@
+!> EVE$INIT.EVE -- Initialization file to set up eve like TKB's eve.exe
+set keypad edt
+define key=ctrl/d erase character
+define key=ctrl/n move by word
+define key=gold/ctrl/d spawn
+define key=gold/ctrl/h edt pf2
+define key=gold/ctrl/l center line
+define key=gold/ctrl/r restore
+
+define key=gold/c capitalize word
+define key=gold/d do
+define key=gold/f find
+define key=gold/h insert here
+define key=gold/l lowercase word
+define key=gold/o other window
+define key=gold/p previous screen
+define key=gold/q quit
+define key=gold/r remove
+define key=gold/s select
+define key=gold/u uppercase word
+
+define key=gold/up previous screen
+define key=gold/down next screen
+
+

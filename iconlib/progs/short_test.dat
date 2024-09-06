@@ -1,0 +1,21 @@
+28-SEP-2003 01:01:16.67:  MX SMTP Server (pid 00002677) starting
+28-SEP-2003 01:24:26.30:  MX SMTP server: rejected message from <eSWYkevK@amzdir.com> sent by black-holed system [64.70.44.10] (on list SBL.SPAMHAUS.ORG)
+28-SEP-2003 01:43:36.92:  MX SMTP server: rejected message from <56brgn@ma2.justnet.ne.jp> to <tim@mtnet2.wvnet.edu> sent by [211.235.18.49] due to disabled relay
+28-SEP-2003 02:05:30.57:  MX SMTP server: rejected message from <bzb146dg@scyther-fan.co.uk> to <tim@mtnet2.wvnet.edu> sent by [64.12.138.9] due to disabled relay
+28-SEP-2003 03:37:32.82:  MX SMTP server: rejected message from <jerrymgray@lycos.com> to <pdl@mtnet2.wvnet.edu> sent by [209.202.220.121] due to disabled relay
+28-SEP-2003 04:17:02.34:  MX SMTP server: rejected message from <31832-return-33-29343526@lb.bcentral.com> to <pdl@mtnet2.wvnet.edu> sent by [204.71.191.28] due to disabled relay
+28-SEP-2003 04:26:03.22:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <pd@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 04:26:10.43:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <pdl@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 04:26:12.83:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <pegg@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 04:26:15.37:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <peggy@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 04:26:17.81:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <stev@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 04:26:19.90:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <steve@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 04:26:22.57:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <tim@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 04:26:25.24:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <tk@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 04:26:27.79:  MX SMTP server: rejected message from <qyqh721atj@aol.com> to <tkb@mtnet2.wvnet.edu> sent by [67.37.68.81] due to disabled relay
+28-SEP-2003 05:05:10.31:  MX SMTP server: rejected message from <yxtkpQeV@prmodaily.com> sent by black-holed system [66.55.167.136] (on list SBL.SPAMHAUS.ORG)
+28-SEP-2003 05:55:15.19:  MX SMTP server: rejected message from <e4a9p@earthlink.net> to <dave@mtnet2.wvnet.edu> sent by [68.46.167.49] due to disabled relay
+28-SEP-2003 06:53:16.23:  MX SMTP server: rejected message from <perfect_8@ranmamail.com> to <steve@mtnet2.wvnet.edu> sent by [218.91.43.164] due to disabled relay
+28-SEP-2003 06:53:16.92:  MX SMTP server: rejected message from <perfect_8@ranmamail.com> to <stev@mtnet2.wvnet.edu> sent by [218.91.43.164] due to disabled relay
+28-SEP-2003 06:53:17.52:  MX SMTP server: rejected message from <perfect_8@ranmamail.com> to <pd@mtnet2.wvnet.edu> sent by [218.91.43.164] due to disabled relay
+28-SEP-2003 06:53:18.13:  MX SMTP server: rejected message from <perfect_8@ranmamail.com> to <pdl@mtnet2.wvnet.edu> sent by [218.91.43.164] due to disabled relay

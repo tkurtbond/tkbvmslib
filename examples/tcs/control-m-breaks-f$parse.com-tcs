@@ -1,0 +1,10 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:50 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$! The following f$parse returns a empty string.  Notice the Control-M?
+$ x = f$parse ("TON$DATA:[MINES.TON]ST2022.DTA",,, "DEVICE", "NO_CONCEAL")
+$ write sys$output "length of x: ", f$length (x)
+$ write sys$output "x: ", x
+%%E 1

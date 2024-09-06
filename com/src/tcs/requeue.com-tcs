@@ -1,0 +1,818 @@
+%%s 8/2/335
+%%d D 1.3 16-Aug-24 12:28:59 tkb 3 2
+%%c Add warning about purging versions in use.  Make some output debug only.
+%%s 234/233/103
+%%d D 1.2 16-Aug-24 11:50:11 tkb 2 1
+%%c Clarify -HOURLY in help and untabify.
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:30 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$       verifying = 'f$verify(f$type(requeue_verify) .nes. "")'
+$! REQUEUE.COM - Requeue a batch.
+$!
+$! usage: @requeue [options] command_proc.com 
+$!
+$! See the "usage:" subroutine below for details, or use -HELP.
+$!-----------------------------------------------------------------------------
+$! Vers  When        Who  What
+$! 1.0   ????-??-??  tkb  Initial version
+$!-----------------------------------------------------------------------------
+%%D 2
+$	start_time = f$time()
+$ 	requeue_proc = f$environment ("procedure")
+$	requeue_name = f$parse (requeue_proc,,,"NAME")
+%%E 2
+%%I 2
+$       start_time = f$time()
+$       requeue_proc = f$environment ("procedure")
+$       requeue_name = f$parse (requeue_proc,,,"NAME")
+%%E 2
+$
+%%D 2
+$	TRUE = 1 .eq. 1
+$	FALSE = 1 .eq. 2
+$	quiet = %x10000000
+$	wso :== write sys$output
+$	wse :== write sys$error
+$	
+$	opt_list = "/CHECK/DAILY/DEBUG/DELTA/HELP/HOURLY/NOREQUEUE/NORUN" + -
+	    "/QUEUE/REMOVE/REQUEUE/RUN/START/USER/VERBOSE/"
+$	opt_list_len = f$length (opt_list)
+$	operation = "NORMAL" ! requeue and run
+$	method = "UNSPECIFIED"
+$	verbose_flag = FALSE
+$	debug_flag = FALSE
+$	delta = ""
+$ 	batch_queue = "FST$BATCH"
+$	username = f$edit (f$getjpi ("", "USERNAME"), "TRIM")
+%%E 2
+%%I 2
+$       TRUE = 1 .eq. 1
+$       FALSE = 1 .eq. 2
+$       quiet = %x10000000
+$       wso :== write sys$output
+$       wse :== write sys$error
+$       
+$       opt_list = "/CHECK/DAILY/DEBUG/DELTA/HELP/HOURLY/NOREQUEUE/NORUN" + -
+            "/QUEUE/REMOVE/REQUEUE/RUN/START/USER/VERBOSE/"
+$       opt_list_len = f$length (opt_list)
+$       operation = "NORMAL" ! requeue and run
+$       method = "UNSPECIFIED"
+$       verbose_flag = FALSE
+$       debug_flag = FALSE
+$       delta = ""
+$       batch_queue = "FST$BATCH"
+$       username = f$edit (f$getjpi ("", "USERNAME"), "TRIM")
+%%E 2
+$
+%%D 2
+$	i = 1
+%%E 2
+%%I 2
+$       i = 1
+%%E 2
+$ 10:   if i .gt. 8 then goto usage
+%%D 2
+$ 	opt = p'i'
+$	if opt .eqs. "" then goto usage
+$ 	if f$extract (0, 1, opt) .nes. "-" then goto 19
+$	which = f$extract (1, 4, opt)
+$	ok = f$locate ("/" + which, opt_list) .ne. opt_list_len
+$	if .not. ok then goto usage
+$	gosub OPT$'which'
+$	i = i + 1
+$	goto 10
+%%E 2
+%%I 2
+$       opt = p'i'
+$       if opt .eqs. "" then goto usage
+$       if f$extract (0, 1, opt) .nes. "-" then goto 19
+$       which = f$extract (1, 4, opt)
+$       ok = f$locate ("/" + which, opt_list) .ne. opt_list_len
+$       if .not. ok then goto usage
+$       gosub OPT$'which'
+$       i = i + 1
+$       goto 10
+%%E 2
+$ 19:
+%%D 2
+$	command_proc = f$parse (opt,,f$environment ("DEFAULT"))
+%%E 2
+%%I 2
+$       command_proc = f$parse (opt,,f$environment ("DEFAULT"))
+%%E 2
+%%D 3
+$       command_proc = command_proc - f$parse (command_proc,,, "VERSION")
+%%E 3
+%%D 2
+$	wso "command_proc: ", command_proc
+$	job_name = f$edit (requeue_name + "_" + -
+			   f$parse (command_proc,,,"NAME"), -
+%%E 2
+%%I 2
+%%D 3
+$       wso "command_proc: ", command_proc
+%%E 3
+%%I 3
+$       if debug_flag then wse "command_proc: ", command_proc
+$       version = f$parse (command_proc,,, "VERSION")
+$       if debug_flag then wse "version: ", version
+$       command_proc = command_proc - version
+$       if debug_flag then wse "command_proc: ", command_proc
+%%E 3
+$       job_name = f$edit (requeue_name + "_" + -
+                           f$parse (command_proc,,,"NAME"), -
+%%E 2
+                           "COLLAPSE,UPCASE")
+%%D 2
+$	if operation .eqs. "RUN" then goto execute
+$	if method .eqs. "UNSPECIFIED"
+$	then
+$	    opt = "-DAILY"
+$	    gosub OPT$dail
+$	endif
+%%E 2
+%%I 2
+$       if operation .eqs. "RUN" then goto execute
+$       if method .eqs. "UNSPECIFIED"
+$       then
+$           opt = "-DAILY"
+$           gosub OPT$dail
+$       endif
+%%E 2
+$
+%%D 2
+$ 	pid = f$integer ("%x" + f$getjpi ("", "PID"))
+$	temp = f$getqui ("") ! clear getqui context
+%%E 2
+%%I 2
+$       pid = f$integer ("%x" + f$getjpi ("", "PID"))
+$       temp = f$getqui ("") ! clear getqui context
+%%E 2
+$ queue_loop:
+%%D 2
+$   	qname = f$getqui("DISPLAY_QUEUE","QUEUE_NAME",batch_queue, "WILDCARD")
+$   	if qname .eqs. "" then goto end_queue_loop
+%%E 2
+%%I 2
+$       qname = f$getqui("DISPLAY_QUEUE","QUEUE_NAME",batch_queue, "WILDCARD")
+$       if qname .eqs. "" then goto end_queue_loop
+%%E 2
+$     job_loop:
+%%D 2
+$     	    noaccess = f$getqui("DISPLAY_JOB","JOB_INACCESSIBLE",,"ALL_JOBS")
+$     	    if noaccess .eqs. "TRUE" then goto job_loop
+$     	    if noaccess .eqs. "" then goto queue_loop
+$     	    jname = f$getqui("DISPLAY_JOB","JOB_NAME",,"FREEZE_CONTEXT")
+$     	    jentry = f$getqui("DISPLAY_JOB","ENTRY_NUMBER",,"FREEZE_CONTEXT")
+$     	    jpid = f$integer ("%x" + f$getqui ("DISPLAY_JOB", "JOB_PID",, -
+%%E 2
+%%I 2
+$           noaccess = f$getqui("DISPLAY_JOB","JOB_INACCESSIBLE",,"ALL_JOBS")
+$           if noaccess .eqs. "TRUE" then goto job_loop
+$           if noaccess .eqs. "" then goto queue_loop
+$           jname = f$getqui("DISPLAY_JOB","JOB_NAME",,"FREEZE_CONTEXT")
+$           jentry = f$getqui("DISPLAY_JOB","ENTRY_NUMBER",,"FREEZE_CONTEXT")
+$           jpid = f$integer ("%x" + f$getqui ("DISPLAY_JOB", "JOB_PID",, -
+%%E 2
+                              "FREEZE_CONTEXT"))
+%%D 2
+$     	    if (jname .eqs. job_name) .and. (jpid .ne. pid) 
+$	    then
+$		! We found the job
+$		if operation .eqs. "REMOVE" then goto remove_job
+$		!else
+	        goto job_waiting
+$	    endif
+%%E 2
+%%I 2
+$           if (jname .eqs. job_name) .and. (jpid .ne. pid) 
+$           then
+$               ! We found the job
+$               if operation .eqs. "REMOVE" then goto remove_job
+$               !else
+                goto job_waiting
+$           endif
+%%E 2
+$           goto job_loop
+$     end_job_loop:
+$ end_queue_loop:
+%%D 2
+$	if operation .eqs. "REMOVE" then goto no_job_to_remove
+$	wse "We need to requeue ", job_name
+$	rqtime = f$cvtime (requeue_time, "COMPARISON")
+$	curtime = f$cvtime ("", "COMPARISON")
+$	if verbose_flag	then wso "rqtime: ", rqtime
+$	if verbose_flag then wso "curtime: ", curtime 
+$	if rqtime .gts. curtime	then goto time_ok
+$	wse "Requeue time ", rqtime
+$	wse "    is earlier than current time ", curtime
+$	wse "Exiting..."
+$	exit 2 .or. quiet .or. (f$verify(verifying) .and. 0)
+%%E 2
+%%I 2
+$       if operation .eqs. "REMOVE" then goto no_job_to_remove
+$       wse "We need to requeue ", job_name
+$       rqtime = f$cvtime (requeue_time, "COMPARISON")
+$       curtime = f$cvtime ("", "COMPARISON")
+$       if verbose_flag then wso "rqtime: ", rqtime
+$       if verbose_flag then wso "curtime: ", curtime 
+$       if rqtime .gts. curtime then goto time_ok
+$       wse "Requeue time ", rqtime
+$       wse "    is earlier than current time ", curtime
+$       wse "Exiting..."
+$       exit 2 .or. quiet .or. (f$verify(verifying) .and. 0)
+%%E 2
+$ time_ok: 
+%%D 2
+$	if debug_flag then wso "method: ", method
+$	if operation .eqs. "CHECK" then goto the_end
+%%E 2
+%%I 2
+$       if debug_flag then wso "method: ", method
+$       if operation .eqs. "CHECK" then goto the_end
+%%E 2
+$
+%%D 2
+$	if username .eqs. f$edit (f$getjpi ("", "USERNAME"), "TRIM")
+$	then
+$	    useropt = ""
+$	else
+$	    useropt = "/USER=" + username
+$	endif
+%%E 2
+%%I 2
+$       if username .eqs. f$edit (f$getjpi ("", "USERNAME"), "TRIM")
+$       then
+$           useropt = ""
+$       else
+$           useropt = "/USER=" + username
+$       endif
+%%E 2
+$
+%%D 2
+$ 	wse "Requeueing ", job_name
+$ 	submit/noprint/nodelete -
+	    /que='batch_queue' 'useropt' /name='job_name' -
+    	    /after="''requeue_time'" -
+%%E 2
+%%I 2
+$       wse "Requeueing ", job_name
+$       submit/noprint/nodelete -
+            /que='batch_queue' 'useropt' /name='job_name' -
+            /after="''requeue_time'" -
+%%E 2
+            !/hold -
+%%D 2
+	    /parameters=("''method'", -
+	                 "-QUEUE=''batch_queue'", -
+	                 "-USER=''username'", -
+	                 'command_proc') -
+%%E 2
+%%I 2
+            /parameters=("''method'", -
+                         "-QUEUE=''batch_queue'", -
+                         "-USER=''username'", -
+                         'command_proc') -
+%%E 2
+            'requeue_proc'
+$
+%%D 2
+$	if operation .eqs. "REQUEUE" then goto the_end
+%%E 2
+%%I 2
+$       if operation .eqs. "REQUEUE" then goto the_end
+%%E 2
+$
+$ execute:
+%%D 2
+$	wse "Executing ", command_proc
+$     	@'command_proc'
+%%E 2
+%%I 2
+$       wse "Executing ", command_proc
+$       @'command_proc'
+%%E 2
+$
+$ the_end:
+%%D 2
+$	exit (1 .or. (f$verify(verifying) .and. 0))
+$	
+%%E 2
+%%I 2
+$       exit (1 .or. (f$verify(verifying) .and. 0))
+$       
+%%E 2
+$ job_waiting: 
+$       wse "There's already a ", job_name, " waiting, entry number ", jentry
+$       exit (1 .or. (f$verify(verifying) .and. 0))
+$
+$ remove_job:
+%%D 2
+$	show entry 'jentry'
+$	delete/entry='jentry'/log
+$	exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 2
+%%I 2
+$       show entry 'jentry'
+$       delete/entry='jentry'/log
+$       exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 2
+$
+$ no_job_to_remove:
+%%D 2
+$	wse "There is no ", job_name, " waiting to remove"
+$	exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 2
+%%I 2
+$       wse "There is no ", job_name, " waiting to remove"
+$       exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 2
+$! 
+$ usage:
+$       copy sys$input sys$error
+usage: @requeue [options] command_proc.com
+
+%%I 3
+WARNING: If you PURGE the versions of this command procedure that existing
+batch queue entries are using they fill fail and not requeue.
+
+%%E 3
+-CHECK
+%%D 2
+  	check the requeueing time, but do not run or requeue.
+%%E 2
+%%I 2
+        check the requeueing time, but do not run or requeue.
+%%E 2
+-DAILY[=delta]
+%%D 2
+  	requeue daily, optionally at the specified delta from start of day.
+%%E 2
+%%I 2
+        requeue daily, optionally at the specified delta from start of day.
+%%E 2
+-DEBUG
+%%D 2
+	Display debugging messages.
+%%E 2
+%%I 2
+        Display debugging messages.
+%%E 2
+-DELTA=delta
+%%D 2
+	requeue after the amount of time specified by "delta" passes.
+%%E 2
+%%I 2
+        requeue after the amount of time specified by "delta" passes.
+%%E 2
+-HELP
+%%D 2
+	This message.
+%%E 2
+%%I 2
+        This message.
+%%E 2
+-HOURLY[=delta]
+%%D 2
+  	requeue hourly, optionally at the specified delta from
+	the start of the hour.
+%%E 2
+%%I 2
+        requeue hourly at current time, or optionally at the specified delta 
+        from the start of the hour.  Note that specifing a delta of 0 (zero)
+        means the start of the hour.
+%%E 2
+-NOREQUEUE
+%%D 2
+  	Run the command procedure, but do not requeue it.
+%%E 2
+%%I 2
+        Run the command procedure, but do not requeue it.
+%%E 2
+-QUEUE=batch_queue
+%%D 2
+	Specify the batch queue.
+%%E 2
+%%I 2
+        Specify the batch queue.
+%%E 2
+-REMOVE
+%%D 2
+	Remove the requeueing batch for the specified command procedure.
+%%E 2
+%%I 2
+        Remove the requeueing batch for the specified command procedure.
+%%E 2
+-REQUEUE
+%%D 2
+  	Requeue only, do not run the command procedure.
+%%E 2
+%%I 2
+        Requeue only, do not run the command procedure.
+%%E 2
+-RUN
+%%D 2
+  	Run the command procedure, but do not requeue it.
+%%E 2
+%%I 2
+        Run the command procedure, but do not requeue it.
+%%E 2
+-START=start-time
+%%D 2
+	Start time to use instead of the current time.
+%%E 2
+%%I 2
+        Start time to use instead of the current time.
+%%E 2
+-USER=username
+%%D 2
+  	User to submit the batch as.
+%%E 2
+%%I 2
+        User to submit the batch as.
+%%E 2
+-VERBOSE
+%%D 2
+	Display more messages.
+%%E 2
+%%I 2
+        Display more messages.
+%%E 2
+
+The normal mode of operation is to requeue and run the command procedure. 
+%%D 2
+$	exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 2
+%%I 2
+$       exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 2
+$
+$! Parse options
+$ OPT$chec:
+%%D 2
+$ 	operation = "CHECK"
+$ 	return
+%%E 2
+%%I 2
+$       operation = "CHECK"
+$       return
+%%E 2
+$
+$ OPT$dail:
+%%D 2
+$ 	method = "-DAILY"
+$	len = f$length (opt)
+$	pos = f$locate ("=", opt)
+%%E 2
+%%I 2
+$       method = "-DAILY"
+$       len = f$length (opt)
+$       pos = f$locate ("=", opt)
+%%E 2
+$       requeue_time = "TODAY"
+%%D 2
+$	if pos .ne. len 
+$	then
+$	    delta = f$extract (pos+1, len, opt)
+$	else
+$	    delta = f$cvtime (start_time, "COMPARISON", "HOUR") + ":" + -
+		    f$cvtime (start_time, "COMPARISON", "MINUTE")
+$	endif
+$	requeue_time = requeue_time + "+" + delta
+$	if debug_flag then wso "requeue_time: ", requeue_time
+$	test_time = f$cvtime (requeue_time , "ABSOLUTE")
+$	if debug_flag then wso "test_time: ", requeue_time
+%%E 2
+%%I 2
+$       if pos .ne. len 
+$       then
+$           delta = f$extract (pos+1, len, opt)
+$       else
+$           delta = f$cvtime (start_time, "COMPARISON", "HOUR") + ":" + -
+                    f$cvtime (start_time, "COMPARISON", "MINUTE")
+$       endif
+$       requeue_time = requeue_time + "+" + delta
+$       if debug_flag then wso "requeue_time: ", requeue_time
+$       test_time = f$cvtime (requeue_time , "ABSOLUTE")
+$       if debug_flag then wso "test_time: ", requeue_time
+%%E 2
+$ daily_test_time: 
+%%D 2
+$	cur_time = f$cvtime (start_time, "COMPARISON")
+$	rqtime = f$cvtime (requeue_time, "COMPARISON")
+$	if debug_flag then wso "cur_time: ", cur_time
+$	if debug_flag then wso "rqtime:   ", rqtime
+$	if cur_time  .gts. rqtime
+$	then
+$	    requeue_time = "TOMORROW+" + delta
+$	    goto daily_test_time
+$	endif
+$	method = method + "=" + delta
+$	if debug_flag then wso "requeue_time: ", requeue_time
+$	if debug_flag then wso "method: ", method	
+$ 	return
+%%E 2
+%%I 2
+$       cur_time = f$cvtime (start_time, "COMPARISON")
+$       rqtime = f$cvtime (requeue_time, "COMPARISON")
+$       if debug_flag then wso "cur_time: ", cur_time
+$       if debug_flag then wso "rqtime:   ", rqtime
+$       if cur_time  .gts. rqtime
+$       then
+$           requeue_time = "TOMORROW+" + delta
+$           goto daily_test_time
+$       endif
+$       method = method + "=" + delta
+$       if debug_flag then wso "requeue_time: ", requeue_time
+$       if debug_flag then wso "method: ", method       
+$       return
+%%E 2
+$
+$ OPT$debu:
+%%D 2
+$	debug_flag = TRUE
+$	return
+%%E 2
+%%I 2
+$       debug_flag = TRUE
+$       return
+%%E 2
+$
+$ OPT$help:
+%%D 2
+$	goto usage
+$	exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 2
+%%I 2
+$       goto usage
+$       exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 2
+$
+$ OPT$hour:
+%%D 2
+$ 	method = "-HOURLY"
+$	len = f$length (opt)
+$	pos = f$locate ("=", opt)
+$	if pos .ne. len 
+$	then 
+$	    delta = f$extract (pos+1, len, opt)
+$	else
+$	    delta = f$cvtime (start_time, "COMPARISON", "MINUTE")
+$	endif
+$	if debug_flag then wso "start_time: ", start_time
+$	if debug_flag then wso "delta: ", delta
+$	method = method + "=" + delta
+$	time = f$cvtime(start_time, "ABSOLUTE")
+%%E 2
+%%I 2
+$       method = "-HOURLY"
+$       len = f$length (opt)
+$       pos = f$locate ("=", opt)
+$       if pos .ne. len 
+$       then 
+$           delta = f$extract (pos+1, len, opt)
+$       else
+$           delta = f$cvtime (start_time, "COMPARISON", "MINUTE")
+$       endif
+$       if debug_flag then wso "start_time: ", start_time
+$       if debug_flag then wso "delta: ", delta
+$       method = method + "=" + delta
+$       time = f$cvtime(start_time, "ABSOLUTE")
+%%E 2
+$       hour = f$extract (12, 2, time)
+$       if debug_flag then wso "hour: ", hour
+$!       new_hour = hour + 1
+%%D 2
+$	new_hour = f$integer (hour)
+$	date = "TODAY"
+%%E 2
+%%I 2
+$       new_hour = f$integer (hour)
+$       date = "TODAY"
+%%E 2
+$ hourly_test_time: 
+$       if new_hour .gt. 23
+%%D 2
+$	then
+$	  new_hour = 0
+$	  date = "TOMORROW"
+$	endif
+%%E 2
+%%I 2
+$       then
+$         new_hour = 0
+$         date = "TOMORROW"
+$       endif
+%%E 2
+$       if debug_flag then wso "new_hour: ", new_hour
+$       new_hour = f$fao ("!2ZL", new_hour)
+$       if debug_flag then wso "new_hour: ", new_hour
+%%D 2
+$	requeue_time = date + "+" + new_hour
+$	if delta .nes. "" then requeue_time = requeue_time + ":" + delta
+$	if debug_flag then wso "requeue_time: ", requeue_time 
+$	cur_time = f$cvtime (start_time, "COMPARISON")
+$	rqtime = f$cvtime (requeue_time, "COMPARISON")
+$	if debug_flag then wso "cur_time: ", cur_time
+$	if debug_flag then wso "rqtime:   ", rqtime
+$	if rqtime .lts. cur_time 
+$	then 
+$	    new_hour = new_hour + 1
+$	    goto hourly_test_time
+$	endif
+$	if debug_flag then wso "method: ", method
+$ 	return
+%%E 2
+%%I 2
+$       requeue_time = date + "+" + new_hour
+$       if delta .nes. "" then requeue_time = requeue_time + ":" + delta
+$       if debug_flag then wso "requeue_time: ", requeue_time 
+$       cur_time = f$cvtime (start_time, "COMPARISON")
+$       rqtime = f$cvtime (requeue_time, "COMPARISON")
+$       if debug_flag then wso "cur_time: ", cur_time
+$       if debug_flag then wso "rqtime:   ", rqtime
+$       if rqtime .lts. cur_time 
+$       then 
+$           new_hour = new_hour + 1
+$           goto hourly_test_time
+$       endif
+$       if debug_flag then wso "method: ", method
+$       return
+%%E 2
+$
+$ OPT$delt:
+%%D 2
+$	method = "-DELTA"
+$	len = f$length (opt)
+$	pos = f$locate ("=", opt)
+$	if pos .ne. len
+$	then
+$	    delta = f$extract (pos+1, len, opt)
+$	else
+$	    wse "-DELTA requires a delta time"
+$	    goto usage
+$	endif
+$	if debug_flag then wso "start_time: ", start_time
+$	if debug_flag then wso "delta: ", delta
+$	method = method + "=" + delta
+$	requeue_time = f$cvtime (start_time + "+" + delta, "ABSOLUTE")
+$	if debug_flag then wso "requeue_time: ", requeue_time
+$	rqtime = f$cvtime (requeue_time, "COMPARISON")
+$	if debug_flag then wso "rqtime: ", rqtime
+$ 	return
+%%E 2
+%%I 2
+$       method = "-DELTA"
+$       len = f$length (opt)
+$       pos = f$locate ("=", opt)
+$       if pos .ne. len
+$       then
+$           delta = f$extract (pos+1, len, opt)
+$       else
+$           wse "-DELTA requires a delta time"
+$           goto usage
+$       endif
+$       if debug_flag then wso "start_time: ", start_time
+$       if debug_flag then wso "delta: ", delta
+$       method = method + "=" + delta
+$       requeue_time = f$cvtime (start_time + "+" + delta, "ABSOLUTE")
+$       if debug_flag then wso "requeue_time: ", requeue_time
+$       rqtime = f$cvtime (requeue_time, "COMPARISON")
+$       if debug_flag then wso "rqtime: ", rqtime
+$       return
+%%E 2
+$
+$ OPT$nore:
+$ OPT$run:
+%%D 2
+$ 	operation = "RUN"
+$ 	return
+%%E 2
+%%I 2
+$       operation = "RUN"
+$       return
+%%E 2
+$
+$ OPT$noru:
+%%D 2
+$ 	operation = "REQUEUE"
+$ 	return
+%%E 2
+%%I 2
+$       operation = "REQUEUE"
+$       return
+%%E 2
+$
+$ OPT$queu:
+%%D 2
+$	len = f$length (opt)
+$	pos = f$locate ("=", opt)
+$	if pos .ne. len
+$	then
+$	    batch_queue = f$extract (pos+1, len, opt)
+$	else
+$	    wse "-QUEUE requires a batch queue name"
+$	    goto usage
+$	endif
+$ 	return
+%%E 2
+%%I 2
+$       len = f$length (opt)
+$       pos = f$locate ("=", opt)
+$       if pos .ne. len
+$       then
+$           batch_queue = f$extract (pos+1, len, opt)
+$       else
+$           wse "-QUEUE requires a batch queue name"
+$           goto usage
+$       endif
+$       return
+%%E 2
+$
+$ OPT$remo: 
+%%D 2
+$	operation = "REMOVE"
+$	return
+%%E 2
+%%I 2
+$       operation = "REMOVE"
+$       return
+%%E 2
+$
+$ OPT$requ:
+%%D 2
+$ 	operation = "REQUEUE"
+$ 	return
+%%E 2
+%%I 2
+$       operation = "REQUEUE"
+$       return
+%%E 2
+$
+$ OPT$star: 
+%%D 2
+$	len = f$length (opt)
+$	pos = f$locate ("=", opt)
+$	if pos .ne. len
+$	then
+$	    start_time = f$cvtime (f$extract (pos+1, len, opt), "ABSOLUTE")
+$	else
+$	    wse "-START requires a start time"
+$	    goto usage
+$	endif
+$	return
+%%E 2
+%%I 2
+$       len = f$length (opt)
+$       pos = f$locate ("=", opt)
+$       if pos .ne. len
+$       then
+$           start_time = f$cvtime (f$extract (pos+1, len, opt), "ABSOLUTE")
+$       else
+$           wse "-START requires a start time"
+$           goto usage
+$       endif
+$       return
+%%E 2
+$
+$ OPT$user:
+%%D 2
+$ 	len = f$length (opt)
+$	pos = f$locate ("=", opt)
+$	if pos .ne. len
+$	then
+$	    username = f$extract (pos+1, len, opt)
+$	else
+$	    wse "-USER requires a username"
+$	    goto usage
+$	endif
+$	return
+%%E 2
+%%I 2
+$       len = f$length (opt)
+$       pos = f$locate ("=", opt)
+$       if pos .ne. len
+$       then
+$           username = f$extract (pos+1, len, opt)
+$       else
+$           wse "-USER requires a username"
+$           goto usage
+$       endif
+$       return
+%%E 2
+$
+$ OPT$vers: 
+%%D 2
+$	verbose_flag = TRUE
+$	return
+%%E 2
+%%I 2
+$       verbose_flag = TRUE
+$       return
+%%E 2
+$
+$! end of REQUEUE.COM
+%%E 1

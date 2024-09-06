@@ -1,0 +1,45 @@
+$ write sys$output "login.com: begin: ", f$getjpi("", "CPUTIM")
+$ verifying = 'f$verify(f$type(login_verify) .nes. "")'
+$!
+$!----------------------------------------------------------------------------!
+$! 
+$! program:   	L O G I N . C O M
+$! written by:	Thomas Kurt Bond
+$! version:	1.00a
+$! date:	??-???-????
+$!
+$! description:
+$!     normal login procedure.  Executes each file of the login subsystem.
+$! The login subsystem is broken up into files to allow easy modification.
+$!
+$! history:
+$! ver     when    who  what
+$! 1.00a   ??????  tkb  Login command procedure.  Execute all login files.
+$!----------------------------------------------------------------------------!
+$!> LOGIN.COM -- login command file. Execute the pieces of the login subsystem
+$!
+$ exec: subroutine	! executate a command file if found, notify otherwise
+$     if f$search(p1) .eqs. "" then goto not_found
+$     @'p1' 'p2' 'p3'   ! p2 is filler, p3 is options for logical defines
+$     exit
+$   not_found:
+$     write sys$output "error: cannot find ''p1'"
+$     exit
+$ endsubroutine
+$!
+$ on error then goto the_end
+$ on control_y then goto the_end
+$ if p1 then set verify
+$!
+$ root == f$trnlnm("SYS$LOGIN") - "]"
+$ libroot == "dra4:[mpl.tkb"
+$
+$ call exec 'libroot'.lib.com]acclogicals.com ! filler /job
+$ call exec 'libroot'.lib.com]liblogicals.com ! filler /job
+$ call exec 'libroot'.lib.com]dclsymbols.com
+$ call exec 'libroot'.lib.com]libsymbols.com
+$ call exec 'libroot'.lib.com]dms_symbols.com
+$ call exec 'libroot'.lib.com]setup.com
+$the_end:
+$ write sys$output "login.com: end: ", f$getjpi("", "CPUTIM")
+$ exit (1 .or. (f$verify(verifying) .and. 0))

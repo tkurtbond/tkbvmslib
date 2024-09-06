@@ -1,0 +1,14 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:23 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$	verifying = 'f$verify(f$type(REPLACE_WITH_PROCNAME_verify) .nes. "")'
+$!> FILENAME -- DESCRIPTION
+$!-----------------------------------------------------------------------------
+$! Vers  When        Who  What
+$! 1.0   2023-09-22  tkb  Initial version
+$!-----------------------------------------------------------------------------
+$ the_end:
+$       exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 1

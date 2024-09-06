@@ -1,0 +1,13 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:51 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+### ICONARGS.ICN - Display the arguments.
+## Since Icon is written in C, the VAX C RTL converts the arguments to the
+## program to lower case.
+procedure main (args)
+  while arg := get (args) do
+    write (arg)
+end # main
+%%E 1

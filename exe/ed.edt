@@ -1,0 +1,25 @@
+Define Key Control A as "?'Ascii value: 'asc."
+Define Key Control B as "-W."
+Define Key Control F as "+W."
+Define Key Control G as "s-~/?'Find marker: '\~--"
+Define Key Control J as "sel."
+Define Key Control P as "i~/?'Mark as: '\~^Z."
+Define Key Control V as "?'Ascii: 'ASC."
+Define Key Gold E as "ext f=error."
+Define Key Gold F as "fillsr."
+Define Key Gold K as "c=keys."
+Define Key Gold M as "ext f=main ?'Line number: '."
+Define Key Gold O as "ext write ?'Output File: ' =?' Buffer: '."
+Define Key Gold R as "ext f=main."
+Define Key Gold S as "ext show buffer."
+Define Key Gold W as "ext write ?'Output File: '."
+Define Key Gold 12 as "(-22V)."
+Define Key Gold 13 as "(+22V)."
+Define Key Gold Control A as "ext quit."
+Define Key Gold Control Z as "ext exit."
+f=error
+inc ed_list
+f=keys
+inc exe_lib:ed.edt
+f=main
+set mode change

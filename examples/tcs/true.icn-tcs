@@ -1,0 +1,15 @@
+%%s 0/0/0
+%%d D 1.1 21-Aug-24 13:36:26 tkb 1 0
+%%c Show how null/not null values can be used as false/true.
+%%T
+%%I 1
+procedure main()
+  local v1, v2
+
+  v1 := &null
+  v2 := 1
+  if \v1 then write ("\\v1") else write ("not \\v1")
+  if \v2 then write ("\\v2") else write ("not \\v2")
+
+end # main
+%%E 1

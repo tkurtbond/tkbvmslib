@@ -1,0 +1,6 @@
+define verb ed
+    image exe_lib:ed
+    parameter p1, label=infile
+    qualifier recover
+    qualifier output, value(required)
+    qualifier list

@@ -1,0 +1,50 @@
+$	set noverify
+$!
+$!	program						TIMESTAMP.COM
+$!	by						C. Paul Bond
+$!	date						06/06/85
+$!
+$!
+$!	    This command file is used keep a file with the current
+$!	time so that if the computer crashs the time at which it
+$!	did so will be known.  When the file starts up it mail the
+$!	old time to a list of people and then will make a new version 
+$!	of the file but that is the only time a new version is made.
+$!
+$!
+$	on error then goto the_end
+$	set process/name="Time Stamp"
+$	time_stamp_file = "mpl$data:[mpl.tkb]timestamp.dat"
+$	mailing_list = "_TKB"
+$	length_wait = "00:10"
+$!
+$!	    Send a message telling them we were down.
+$!
+$ GOTO SKIP_MAILING
+$	if f$search(time_stamp_file) .eqs. "" then goto skip_mailing
+$	mail/sub="System down at ..." 'time_stamp_file' 'mailing_list'
+$ skip_mailing:
+$!
+$!	    This is the main body of the program it will open the
+$!	    file write the current time and close it.  Then wait
+$!	    the given amount of time and do it again.  The only
+$!	    time the program will exit this loop is if the program
+$!	    is stoped by something outside.
+$!
+$	open/write f 'time_stamp_file'		! make new file
+$	current_time = f$time()			! get current time
+$	write f current_time			! write only record
+$	close f
+$	wait 'length_wait'
+$ loop:
+$	open/read/write f 'time_stamp_file'	! reopen file for update
+$	read f tmp				! read only record
+$	current_time = f$time()			! get current time
+$	write/update f current_time		! update time
+$	close f
+$	wait 'length_wait'
+$	goto loop
+$!
+$ the_end:
+$	mail/sub="Timestamp ERROR" 'time_stamp_file' 'mailing_list'
+$	exit

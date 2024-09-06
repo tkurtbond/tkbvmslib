@@ -1,0 +1,29 @@
+$ !> ADDLNM.COM -- Add another entry to logical name with multiple translations
+$ ! usage: adlnm logical cmd newtrans
+$ lnm = p1
+$ cmd = f$edit (p2, "COLLAPSE,UPCASE")
+$ newtrans = p3
+$ translations = ""
+$ i = 0
+$ 10$:
+$	tran = f$trnlnm (lnm, , i)
+$	if tran .eqs. "" then goto 19$
+$	if translations .nes. "" then translations = translations + ", "
+$       translations = translations + tran
+$	i = i + 1
+$	goto 10$
+$ 19$:
+$
+$ if translations .eqs. "" 
+$ then
+$	write sys$error "Error: no translations!"
+$	exit 2
+$ endif
+$ if cmd .eqs. "FRONT"
+$ then
+$	translations = newtrans + ", " + translations
+$ else
+$	translations = translations + ", " + newtrans
+$ endif
+$ define/trans=conc 'lnm' 'translations'
+$ show log 'lnm'

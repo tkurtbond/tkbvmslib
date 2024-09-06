@@ -1,0 +1,9 @@
+!+
+!	Define exit keys for look command
+!	
+!	look :== edit/read/command=edt_com:look
+!-
+Define Key Control Q as "quit."
+Define Key Gold Cont Z as "quit."
+Set Mode Change
+Find=main

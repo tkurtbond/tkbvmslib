@@ -1,0 +1,121 @@
+!> APPLY_ALL_TO.SDCL -- run command in P2&P3 on ALL files from filespec in P1
+###############################################################################
+### Format:
+###     $ apply_to <file-spec> <command-head> [<command-tail>]
+### Example:
+###     $ apply_to *.bas "basic/list/debug/cross"
+### Description:
+###     APPLY_ACC_TO applies the command in p2 to all of the files
+### that match the (possibly wildcarded) file specification in p1, AT
+### THE SAME TIME.  p3 is appended to the command *after* the file
+### names.
+###
+### Note that DCL command lines are very short (256 characters), so don't
+### specify a <file-spec> that matches a lot of files...
+###############################################################################
+   ## Don't turn off verifying, because if -d is specified you can't tell 
+   ## what is happening.
+   wso = "write sys$output"
+   wse = "write sys$error"
+   inq = "inquire/nopun"
+   true = (1 .eq 1)
+   false = .not. true
+   quiet = %x10000000
+#   debugging = 1
+
+   sep = " "                            #Default to space for separator
+   strip = false
+   verbose = false
+   opt_list = "/COMMA/STRIP/VERBOSE/"
+   opt_list_len = f$length (opt_list)
+
+   i = 1
+   while (f$extract (0, 1, p'i') .eqs. "-") {
+       opt = p'i'
+       if ((opt .eqs. "-H") .or. (opt .eqs. "-?") .or. (opt .eqs. "-HELP")) {
+           goto usage
+       }
+       which = f$extract (1, 3, opt)
+       ok = f$locate ("/" + which, opt_list) .ne. opt_list_len .and. \
+           (which .nes. "")
+       if (ok)
+          gosub OPT$'which'
+       else {
+          write sys$output "Invalid option: ''opt'"
+          goto usage
+       }
+       i = i + 1
+   }
+
+   filename = p'i'
+   i = i + 1
+   command_head = p'i'
+   i = i + 1
+   command_tail = p'i'
+   if (filename .eqs. "")
+       inq filename "_Filespec: "
+   if (filename .eqs. "")
+       exit
+   if (command_head .eqs. "")
+       inq command_head "_Command: "
+   if (command_head .eqs. "") 
+       exit
+   if (command_tail .eqs. "")
+       inq command_tail "_Tail: "
+
+   ##if version not specified in filename, don't supply to command
+   strip_version = f$locate(";", filename) .eq. f$length(filename)
+
+   i = 0
+   filenames = ""
+   f = f$search(filename)
+   while (f .nes. "") {
+       define/user sys$input sys$command
+       if (strip_version) f = f - f$parse(f,,,"VERSION")
+#       if (debugging) wse "f: ", f
+       if (strip) f = f - f$parse (f,,, "DEVICE") - f$parse (f,,, "DIRECTORY")
+       if (filenames .nes. "") filenames = filenames + sep + f
+       else filenames = f
+       i = i + 1
+       f = f$search(filename)
+   }
+   wse "''i' files found"
+   if (verbose) write sys$output "''command_head' ''filenames' ''command_tail'"
+   'command_head' 'filenames' 'command_tail'
+The_End:
+   exit
+
+OPT$com:
+   sep = ","
+   return
+
+OPT$str:
+   strip = true
+   return ! strip option
+
+OPT$ver:
+   verbose = true
+   return ! verbose option
+
+
+usage:
+    type sys$input
+    // usage: apply_to [OPTION ...] FILESPEC COMMANDHEAD [COMMANDTAIL]
+    // where:
+    // FILESPEC       - Is the VMS file specification matching the files you 
+    //                  want to apply COMMANDHEAD to.  Wildcards are allowed.
+    // COMMANDHEAD    - Is the command you want to apply to each matching 
+    //                  filename.
+    // COMMANDTAIL    - Is the optional tail end of the command you want to 
+    //                  appply to each matching filename.
+    //
+    // The command as a whole is applied to EACH of the matching files in turn.
+    //
+    // Options:
+    // -comma         - Use a comma as the separator between filenames when
+    //                  building the list.
+    // -h, -?, -help  - Display this message.
+    // -strip         - Strip the device and the directory from the resulting
+    //                  filenames.
+    // -verbose       - Turn on verbose messages.
+    exit 2 .or. quiet

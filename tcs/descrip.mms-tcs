@@ -1,0 +1,26 @@
+%%s 0/0/0
+%%d D 1.1 26-Aug-24 12:41:32 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+zipvms :
+	today = f$cvtime (,, "DATE")
+        set def [-]
+	zipfile = "tkblib_" + today + ".zip"
+	! It's not really accurate unless we start from scratch.
+	if f$search (zipfile) .nes. "" then delete 'zipfile';*/log
+	zip "-V" -r 'zipfile' login.com lib.dir -x *.map *.log
+        write sys$output "Done zipvmsing!"
+
+
+
+ziptxt :
+	today = f$cvtime (,, "DATE")
+        set def [-]
+	zipfile = "tkblib_txt_" + today + ".zip"
+	! It's not really accurate unless we start from scratch.
+	if f$search (zipfile) .nes. "" then delete 'zipfile';*/log
+	zip -r 'zipfile' login.com lib.dir -x *.dsc *.key *.obj *.exe *.hlb *.lis *.map *.log
+        write sys$output "Done ziptxting!"
+
+%%E 1

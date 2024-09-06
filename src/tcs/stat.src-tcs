@@ -1,0 +1,66 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 16:12:21 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+From:	UUCP%"mploak!tkb" 15-NOV-1991 14:53:57.28
+To:	tkb@mtnet2.wvnet.edu
+CC:	
+Subj:	stat
+
+From tkb Fri, 15 Nov 91 14:54:45 EST remote from mploak
+Received: from mploak by mtnet2.wvnet.edu (DECUS UUCP ///1.3-1/2.5/);
+          Fri, 15 Nov 91 14:53:55 EST
+Received: by mploak.UUCP (DECUS UUCP ///1.3-1/2.5/);
+          Fri, 15 Nov 91 14:54:45 EST
+Date: Fri, 15 Nov 91 14:54:45 EST
+Message-Id: <00951AE3B6998320.00001E74@mploak.UUCP>
+From: "Thomas Kurt Bond, AdminiSoft, Inc. 304/291-2146" <mploak!tkb>
+Subject: stat
+To: tkb@mtnet2.wvnet.edu
+X-VMS-Mail-To: uucp%"tkb@mtnet2.wvnet.edu"
+X-VMS-Mail-CC: TKB
+
+#ifdef VMS
+
+#include <unixio.h>
+#include <types.h>
+
+int 
+utime (const char *path, struct {time_t actime, mtime;} times)
+{
+  return 0;			/* fake */
+}
+
+
+#undef stat
+int 
+sys_stat (const char *file_spec, stat_t *buffer)
+{
+  int return_status;
+  int in_des;
+  off_t num_bytes, n;
+  char buf[512];
+
+  return_status = stat (file_spec, buffer);
+
+  if (return_status != -1)
+    {
+      /* Ugh.  VMS hates UNIX, and so must the VMS C RTL developers. */
+      in_des = open (file_spec, O_RDONLY, 0);
+      if (in_des == -1)
+	return -1;		/* can't open the file, return error */
+      num_bytes = 0;
+      while ((n = read (in_des, buf, 512)) != 0)
+	{
+	  if (n < 0)
+	    return -1;		/* error reading, return error */
+	  num_bytes += n;
+	}
+      buffer->st_size = num_bytes;
+    }
+  return return_status;
+}
+
+#endif /* VMS */
+%%E 1

@@ -1,0 +1,177 @@
+!
+! This module adds the following commands to EVE:
+!
+!         ROT13
+!
+!         PASSWORD [password text]
+!         SHOW PASSWORD
+!         ENCRYPT
+!         DECRYPT
+!
+! If you do not provide a password, you will be prompted.  Upper case,
+! lower case, spaces, punctuation, and even control characters are
+! legal.
+!
+! All commands (encrypt, decrypt, and rot13) work on either the select
+! range or, if there is no select range, on the whole buffer.
+!
+!					-Tom Williams
+!					 January 26, 1993
+!
+PROCEDURE TWW_EVE_ENCRYPTION_MODULE_IDENT;
+          RETURN "V01-0";
+ENDPROCEDURE;
+
+PROCEDURE TWW_ENCRYPT_MODULE_INIT
+          TWW_ENCRYPT_PASSWORD := "";
+          TWW_ROT13_IN := "ABCDEFGHIJKLM"
+                        + "NOPQRSTUVWXYZ"
+                        + "abcdefghijklm"
+                        + "nopqrstuvwxyz";
+          TWW_ROT13_OUT:= "NOPQRSTUVWXYZ"
+                        + "ABCDEFGHIJKLM"
+                        + "nopqrstuvwxyz"
+                        + "abcdefghijklm";
+ENDPROCEDURE
+
+PROCEDURE EVE_ROT13
+          LOCAL				STUFF_TO_ROT13,
+                                        WHERE_WE_WERE;
+
+          STUFF_TO_ROT13 := EVE$SELECTION(false);
+          IF STUFF_TO_ROT13 = 0
+          THEN
+             STUFF_TO_ROT13 := CURRENT_BUFFER;
+          ENDIF;
+
+          WHERE_WE_WERE := MARK( FREE_CURSOR);
+          TRANSLATE( STUFF_TO_ROT13, TWW_ROT13_IN, TWW_ROT13_OUT, IN_PLACE);
+          POSITION( WHERE_WE_WERE);
+ENDPROCEDURE;
+
+PROCEDURE EVE_PASSWORD( ENCRYPT_PASSWORD);
+          EVE$PROMPT_STRING( ENCRYPT_PASSWORD, TWW_ENCRYPT_PASSWORD,
+                             "Enter Password: ", "Password cleared.");
+ENDPROCEDURE;
+
+PROCEDURE EVE_SHOW_PASSWORD
+          MESSAGE( 'Password is "' + TWW_ENCRYPT_PASSWORD + '"');
+ENDPROCEDURE;
+
+PROCEDURE EVE_ENCRYPT
+          LOCAL				PWD_LENGTH;
+
+          PWD_LENGTH := LENGTH( TWW_ENCRYPT_PASSWORD);
+          IF PWD_LENGTH = 0
+          THEN
+             EVE_PASSWORD( "");
+             PWD_LENGTH := LENGTH( TWW_ENCRYPT_PASSWORD);
+          ENDIF;
+          TWW_CRYPT( TWW_ENCRYPT_PASSWORD);
+ENDPROCEDURE;
+
+PROCEDURE EVE_DECRYPT
+          LOCAL				INVERTED_PASSWORD,
+                                        i,
+                                        PWD_LENGTH;
+
+          PWD_LENGTH := LENGTH( TWW_ENCRYPT_PASSWORD);
+          IF PWD_LENGTH = 0
+          THEN
+             EVE_PASSWORD( "");
+             PWD_LENGTH := LENGTH( TWW_ENCRYPT_PASSWORD);
+          ENDIF;
+          INVERTED_PASSWORD := "";
+          I := 1;
+          LOOP;
+              INVERTED_PASSWORD := INVERTED_PASSWORD
+                + ASCII( 256 - ASCII( SUBSTR( TWW_ENCRYPT_PASSWORD, I, 1)));
+              EXITIF I = PWD_LENGTH;
+              I := I + 1;
+          ENDLOOP;
+          TWW_CRYPT( INVERTED_PASSWORD);
+ENDPROCEDURE;
+
+!
+! Encryption/decryption engine.
+!
+PROCEDURE TWW_CRYPT( PASSWORD)
+          LOCAL				HERE,
+                                        I,
+                                        LAST_CHARACTER,
+                                        NEW_CHARACTER,
+                                        OLD_MODE,
+                                        PWD_CHARACTER,
+                                        PWD_INDEX,
+                                        PWD_LENGTH,
+                                        PWD_N,
+                                        THIS_N,
+                                        THIS_SUM,
+                                        STUFF_TO_ALTER,
+                                        total_characters;
+
+          PWD_LENGTH := LENGTH( PASSWORD);
+          OLD_MODE := GET_INFO( CURRENT_BUFFER, "MODE");
+          SET( OVERSTRIKE, CURRENT_BUFFER);
+          PWD_INDEX := 1;
+          STUFF_TO_ALTER := EVE$SELECTION( FALSE);
+          IF STUFF_TO_ALTER = 0
+          THEN
+             STUFF_TO_ALTER := CURRENT_BUFFER;
+          ENDIF;
+
+          total_characters := length( stuff_to_alter);
+          i := 1;
+          LAST_CHARACTER := END_OF( STUFF_TO_ALTER);
+          POSITION( BEGINNING_OF( STUFF_TO_ALTER));
+          LOOP;
+              HERE := MARK( FREE_CURSOR);
+              THIS_CHARACTER := CREATE_RANGE( HERE, HERE);
+              IF STR(THIS_CHARACTER) = ""
+              THEN
+                 MOVE_HORIZONTAL( 1);	! EOL, blank line, etc.  Skip it.
+              ELSE
+                 PWD_CHARACTER := SUBSTR( PASSWORD, PWD_INDEX, 1);
+                 PWD_N := ASCII( PWD_CHARACTER);
+                 THIS_N := ASCII( STR( THIS_CHARACTER));
+                 THIS_SUM := MOD( PWD_N + THIS_N, 256);
+                 NEW_CHARACTER := ASCII( THIS_SUM);
+                 !
+                 ! There is a bug in pre- v5.5-2 TPU that causes explosions
+                 ! when you overstrike with a tab.  Workaround.
+                 !
+                 if (this_sum = 9) OR (this_n = 9)
+                 then
+                    set( insert, current_buffer);
+                    erase_character( 1);
+                    copy_text( new_character);
+                    set( overstrike, current_buffer);
+                 else
+                    !
+                    ! When the above-mentioned bug is squashed, take out
+                    ! the if-then-else block, and just leave this stuff.
+                    !
+                    COPY_TEXT( NEW_CHARACTER);
+                 endif;
+                 i := i + 1;
+                 if i = (i/100) * 100
+                 then
+                    PERCENT := (((i * 1000) / total_characters)+5)/10;
+                    MESSAGE (FAO ("Replaced !SL of !SL character!%S (!SL%)",
+                                  i, total_characters, PERCENT));
+                 endif;
+              ENDIF;
+              EXITIF MARK( free_cursor) = END_OF( CURRENT_BUFFER);
+              EXITIF HERE = LAST_CHARACTER;
+              PWD_INDEX := MOD( PWD_INDEX, PWD_LENGTH) + 1;
+          ENDLOOP;
+          message( "");
+          SET( OLD_MODE, CURRENT_BUFFER);
+ENDPROCEDURE;
+
+!
+! Modulo function. X mod Y := mod( X, Y).
+!
+PROCEDURE MOD( INPUT, BASE);
+          RETURN INPUT - (( INPUT / BASE) * BASE);
+ENDPROCEDURE;

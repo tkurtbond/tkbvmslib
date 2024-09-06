@@ -1,0 +1,189 @@
+!-*- indented-text -*-
+module tags
+
+variable
+    tags_table_buffer,
+    tags_table_file_name,
+    last_tag;
+
+
+
+procedure get_tags_table(file_name)
+    local old_buffer;
+    
+    if tags_table_buffer = TPU$K_UNSPECIFIED then
+        tags_table_buffer := create_buffer("*tags*");
+    else
+	set(modifiable, tags_table_buffer, on);
+        erase(tags_table_buffer);
+    endif;
+!    set(system, tags_table_buffer);
+    set(no_write, tags_table_buffer);
+    old_buffer := current_buffer;
+    position(tags_table_buffer);
+    tags_table_file_name := read_file(file_name);
+    !get rid of version number so it won't cause problems when we use it for
+    !defaulting.
+    tags_table_file_name := file_parse(tags_table_file_name, "", "",
+				       NODE, DEVICE, DIRECTORY, NAME, TYPE);
+    position(old_buffer);
+    set(modifiable, tags_table_buffer, off);
+
+endprocedure ! get_tags_table
+
+
+
+procedure eve_visit_tags_table(;the_file)
+    local file_name;
+
+    if (the_file = TPU$K_UNSPECIFIED) or (the_file = "") then
+        file_name := read_line("Tags Table: ");
+    else
+        file_name := the_file;
+    endif;
+    get_tags_table(file_name);
+endprocedure ! visit_tags_table
+
+
+
+procedure file_of_tag
+    local old_pos, file_name, found_range, p1, p2;
+
+    old_pos := mark(none);
+    found_range := search_quietly(ascii(12), reverse);
+    position(found_range);
+    move_vertical(1);
+    position(line_begin);
+    p1 := mark(none);
+    found_range := search_quietly(",", forward);
+    position(found_range);
+    move_horizontal(-1);
+    file_name := str(create_range(p1, mark(none)));
+    position(old_pos);
+    
+    return file_name;
+endprocedure ! file_of_tag
+
+
+
+procedure find_tag(t; next)
+    local
+        old_buf, found_range, tag_name, full_tag, file_name, line_no,
+        del_Pos, p1, p2;
+
+    old_buf := current_buffer;
+    if tags_table_buffer = TPU$K_UNSPECIFIED then
+        eve_visit_tags_table("");
+    endif;
+
+    if next = TPU$K_UNSPECIFIED then ! find first tag
+	message("Next Unspecified");
+	position(beginning_of(tags_table_buffer));
+	tag_name := t;
+	last_tag := t;
+    else
+	if last_tag = TPU$K_UNSPECIFIED then 
+	    message("No tag to find next occurence of");
+	    return 0;
+        endif;
+	position(tags_table_buffer);
+	tag_name := last_tag;
+    endif;
+
+    loop
+	found_range := search_quietly(tag_name, forward);
+	if found_range = 0 then
+	    if next = TPU$K_UNSPECIFIED then
+	        message("No entries containing " + tag_name);
+	    else
+		message("No more entries containing " + tag_name);
+	    endif;
+	    position(old_buf);
+	    return 0;
+	endif;
+	position(found_range);
+	exitif search_quietly(anchor + scan(ascii(127)) + ascii(127),
+			      forward) <> 0;
+	position(end_of(found_range));
+    endloop;
+
+    !Find the DEL, everything works from there
+    found_range := search_quietly(ascii(127), forward);
+    position(found_range);
+    del_pos := mark(none);
+
+    !Get the name of the file the tag is in, and expand it using the 
+    !tags table file name for a template, so files are relative to the 
+    !directory of the tags table file.
+    file_name := file_of_tag;
+    file_name := file_parse(file_name, tags_table_file_name);
+    message("File Name: " + file_name);
+
+    !Get the full text of the tag
+    move_horizontal(-1);
+    p1 := mark(none);
+    position(line_begin);
+    full_tag := str(create_range(mark(none), p1));
+    position(del_pos);
+    message("Full tag: " + full_tag);
+
+    !Get the line number the item tagged was originally on.
+    move_horizontal(1);
+    p1 := mark(none);
+    position(search_quietly(",", forward));
+    move_horizontal(-1);
+    line_no := int(str(create_range(p1, mark(none))));
+    position(del_pos);
+    message("Line No: " + str(line_no));
+
+    !Get the file and position on the original line.
+    eve_get_file(file_name);
+    position(line_no);
+    position(line_begin);              	!??? and if it isn't
+    p1 := mark(none);
+
+    if search_quietly(anchor + full_tag, forward) <> 0 then
+        return 1			! we found it
+    endif;
+
+    !It isn't on the same line anymore.
+    message("It isn't on the same line anymore!");
+    found_range := search_quietly(line_begin + full_tag, forward);
+    if found_range <> 0 then
+        position(found_range);
+        return 1;
+    endif;
+    found_range := search_quietly(line_begin + full_tag, reverse);
+    if found_range <> 0 then
+        position(found_range);
+        return 1;
+    endif;
+
+    !can't find it
+    message("Tag " + tag_name + " isn't in file " + file_name);
+
+    return 0;
+endprocedure ! find_tag
+
+
+
+procedure eve_find_tag(t)
+    local tag_name;
+
+    if (t = TPU$K_UNSPECIFIED) or (t = "") then
+	tag_name := read_line("Find Tag: ");
+    else
+	tag_name := t;
+    endif;
+
+    find_tag(tag_name);
+endprocedure ! eve_find_tag
+
+
+
+procedure eve_find_next_tag
+    find_tag("",1);
+endprocedure ! eve_find_next_tag
+
+
+endmodule ! tags

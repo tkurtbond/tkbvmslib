@@ -1,0 +1,53 @@
+C-SPC		select
+C-/		find
+C-^		quote
+C-a		start of line
+C-b		move left
+C-d		erase character
+C-f		move right
+C-g		tkb_getlisting
+C-k		eve$edt_delete_eol
+C-l		refresh
+C-n		move down
+C-p		move up
+C-v		next screen
+C-w		remove
+C-z		attach
+
+M-b		tkb_backward_word
+M-c		capitalize word
+M-d		erase word
+M-f		tkb_forward_word
+M-i		include file
+M-j		go to
+M-l		lowercase word
+M-o		other window
+M-q		quit
+M-s		write file
+M-u		uppercase word
+M-v		previous screen
+M-z		exit
+M-/		mark
+M-^		indent range
+M-UP		previous screen
+M-DOWN		next screen
+M-<		top
+M->		bottom
+M-%		replace
+
+C-M-SPC		go to
+C-M-/		wildcard find
+C-M-b		buffer
+C-M-d		dcl
+C-M-f		get file
+C-M-i		tkb_set_auto_indent
+C-M-k		kill buffer
+C-M-l		show buffers
+C-M-r		tkb_get_file_readonly
+
+PF1		do
+
+F17		one window
+F18		two windows
+F19		split windows
+F20		delete window

@@ -1,0 +1,242 @@
+[-]1p1.swm : 1p1.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]2at1nc.swm : 2at1nc.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]5big.swm : 5big.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]5wide.swm : 5wide.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]aaareadme.1st : aaareadme.1st
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]acclogicals.com : acclogicals.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]addlnm.com : addlnm.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]add_help_lib.com : add_help_lib.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]aping.com : aping.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]app.com : app.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]app_sub_w_err.com : app_sub_w_err.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]authorize.com : authorize.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]calc.com : calc.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]check_freespace.com : check_freespace.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]check_freespace_submit.com : check_freespace_submit.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]com.zoo : com.zoo
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]command-procedure.template : command-procedure.template
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]count.com : count.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]dclsymbols.com : dclsymbols.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]dirdevice.com : dirdevice.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]directory_dependent.template : directory_dependent.template
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]dirmail.com : dirmail.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]dirsince.com : dirsince.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]dirtree.com : dirtree.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]diskspace.com : diskspace.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]diskusage.com : diskusage.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]dms_symbols.com : dms_symbols.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]dsckeylist.com : dsckeylist.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]echo.com : echo.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]edtini.edt : edtini.edt
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]emacs.com : emacs.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]emxprv.com : emxprv.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]eoj.com : eoj.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]errors.com : errors.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]escapes_setup.com : escapes_setup.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]eve.com : eve.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]fcms.com : fcms.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]file2dir.com : file2dir.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]file_setup.com : file_setup.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]find_exp.com : find_exp.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]find_tkb_files.com : find_tkb_files.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]four.swm : four.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]four_mhst.swm : four_mhst.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]gcc_setup.com : gcc_setup.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]gnu_symbols.com : gnu_symbols.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]here.com : here.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]home50x2.swm : home50x2.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]hours.zoo : hours.zoo
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]if_exists.com : if_exists.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]if_exists_x.com : if_exists_x.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]inprogress.zoo : inprogress.zoo
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]kept.com : kept.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]kept_editor.com : kept_editor.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]liblogicals.com : liblogicals.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]libsymbols.com : libsymbols.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]listdevices.com : listdevices.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]listmounted.com : listmounted.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]listpriv.com : listpriv.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]listq.com : listq.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]listsrc.com : listsrc.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]list_printers.com : list_printers.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]maillist.com : maillist.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]map.com : map.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]mark.com : mark.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]mhst_adduser.com : mhst_adduser.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]mines_setup.com : mines_setup.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]mk.com : mk.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]modem.swm : modem.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]monthly_by_project-2.com : monthly_by_project-2.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]monthly_by_project.com : monthly_by_project.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]msgtxt.com : msgtxt.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]mxstart.com : mxstart.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]newver.com : newver.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]nothing.com : nothing.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]pakmail.com : pakmail.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]per_disk.com : per_disk.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]ping_mhst.com : ping_mhst.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]popd.com : popd.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]poppriv.com : poppriv.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]proc_dir.com : proc_dir.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]pushd.com : pushd.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]pushpriv.com : pushpriv.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]qbat.com : qbat.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]qstart.com : qstart.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]qstat.com : qstat.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]qstop.com : qstop.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]requeue.com : requeue.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]scm_setup.com : scm_setup.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]scream.com : scream.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]screamon.com : screamon.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]sdcl.zoo : sdcl.zoo
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]searchdevice.com : searchdevice.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]setprocname.com : setprocname.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]setup.com : setup.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]show_files_created_since_date.com : show_files_created_since_date.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]submit_backup.com : submit_backup.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]subroutine-library.com : subroutine-library.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]subvert_verify.com : subvert_verify.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]swim.com : swim.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]swim_modem.swm : swim_modem.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]temp_name.com : temp_name.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]termprint.com : termprint.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]three.swm : three.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]timestamp.com : timestamp.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]tkbcon.bcf : tkbcon.bcf
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]tkb_install_new_gcc.com : tkb_install_new_gcc.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]to512.com : to512.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]tobackup.com : tobackup.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]touch.com : touch.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]two.swm : two.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]two40x40.swm : two40x40.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]two_wide.swm : two_wide.swm
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]usage.com : usage.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]usrman_sub.com : usrman_sub.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]vms_share.com : vms_share.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]wait.com : wait.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]week_start.com : week_start.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]where.com : where.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]whohas.com : whohas.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]x.com : x.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)
+[-]zipdir.com : zipdir.com
+    copy /log $(MMS$SOURCE) $(MMS$TARGET)

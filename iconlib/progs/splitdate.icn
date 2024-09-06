@@ -1,0 +1,66 @@
+global months
+global files
+
+procedure lpos(s, l)
+  every i := 1 to *l do
+    if s == l[i] then return i
+  fail
+end #lpos 
+
+procedure match_date1 ()
+  local d, m, y
+  if (d := right (tab(many(&digits)), 2, "0")) & ="-" &
+    (m := right (string(lpos(=!months, months)), 2, "0")) &  ="-" &
+    (y := right (tab(many(&digits)), 4, "0"))
+  then
+    return y || "-" || m || "-" || d
+  else
+    return &null
+end # match_date1
+
+# Old version.
+# procedure match_date1 ()
+#   local d, m, y
+#   d := right (tab(many(&digits)), 2, "0")
+#   ="-"
+#   m := right (string(lpos(=!months, months)), 2, "0")
+#   ="-"
+#   y := right (tab(many(&digits)), 4, "0")
+#  return y || "-" || m || "-" || d
+# end # match_date1
+
+procedure process_file (file)
+  local date
+  while line := read (file) do {
+    line ? {
+      tab(many (' '))
+      date := match_date1()
+    }
+    if \date then {
+      outfile := date || ".TXT"
+      /files[date] := (open (outfile, "w") |
+		       stop ("unable to open output file: ", outfile))
+      write (files[date], line)
+    }
+  }
+end # process_file
+
+procedure main (arg)
+  local file
+  initial {
+    months := ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+	       "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    files := table()
+  }
+
+  if *arg = 0 then
+    process_file (stdin)
+  else {
+    while filename := get (arg) do
+      {
+	file := open (filename, "r")
+	process_file(file)
+	close (file)
+      }
+  }
+end # main

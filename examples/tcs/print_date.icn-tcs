@@ -1,0 +1,9 @@
+%%s 0/0/0
+%%d D 1.1 21-Aug-24 13:35:35 tkb 1 0
+%%c Print the date.
+%%T
+%%I 1
+procedure main ()
+  write (&dateline)
+end # main
+%%E 1

@@ -1,0 +1,75 @@
+%%s 1/1/52
+%%d D 1.3 22-Aug-24 13:33:55 tkb 3 2
+%%c Add VAX_REDIM.EXE and VAX_REDIM_BEST.EXE to the list of programs to build.
+%%s 1/1/52
+%%d D 1.2 22-Aug-24 11:33:25 tkb 2 1
+%%c Add TRYSAYTIME.ICX to the programs to build.
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:50 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+MFLAGS=/DEBUG/LIST/CROSS/OBJECT=$(MMS$TARGET_NAME)$(OBJ)
+
+all : gcc_double_slash.exe cpr.exe cpr2.exe trycurses.exe cpr3.exe trycurses2.exe read_key.exe try_lib_io.exe negnum.exe bell.exe -
+%%D 2
+        fabnam_ex.exe cargs.exe iconargs.icx iconenv.icx messages.exe lists.mem
+%%E 2
+%%I 2
+%%D 3
+        fabnam_ex.exe cargs.exe iconargs.icx iconenv.icx messages.exe lists.mem c_overflow.exe trysaytime.icx
+%%E 3
+%%E 2
+%%I 3
+        fabnam_ex.exe cargs.exe iconargs.icx iconenv.icx messages.exe lists.mem c_overflow.exe trysaytime.icx vax_redim.exe vax_redim_best.exe
+%%E 3
+
+doesnotcompile : mixed_decls_stmts.exe try_rem.exe
+
+.SUFFIXES : .icn .icx .u1 .u2 .rno
+
+CC=GCC
+
+
+cpr.exe : cpr.obj
+    $(LINK)/EXE=$(MMS$TARGET) $(MMS$SOURCE), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxcrtl.olb/lib
+
+cpr2.exe : cpr2.obj
+    $(LINK)/EXE=$(MMS$TARGET) $(MMS$SOURCE), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxcrtl.olb/lib
+
+trycurses.exe : trycurses.obj
+    $(LINK)/EXE=$(MMS$TARGET) $(MMS$SOURCE), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxccurse.olb/lib, sys$library:vaxcrtl.olb/lib
+
+cpr3.exe : cpr3.obj
+    $(LINK)/EXE=$(MMS$TARGET) $(MMS$SOURCE), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxccurse.olb/lib, sys$library:vaxcrtl.olb/lib
+
+
+trycurses2.exe : trycurses2.obj
+    $(LINK)/EXE=$(MMS$TARGET) $(MMS$SOURCE), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxccurse.olb/lib, sys$library:vaxcrtl.olb/lib
+
+!------------------------------------------------------------------------------
+! Rules
+!------------------------------------------------------------------------------
+
+.c.exe :
+    $(CC)$(CFLAGS)$(XCFLAGS) $(MMS$SOURCE)
+    $(LINK)/EXE=$(MMS$TARGET)$(XLINKFLAGS) $(MMS$SOURCE:.C=.OBJ), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxcrtl.olb/lib
+
+.bas.exe :
+    $(BASIC)$(BASFLAGS)$(XBASFLAGS) $(MMS$SOURCE)
+    $(LINK)$(XLINKFLAGS)/EXE=$(MMS$TARGET) $(MMS$SOURCE:.BAS=.OBJ)
+
+.mar.exe :
+    $(MACRO)$(MFLAGS)$(XMFLAGS) $(MMS$SOURCE)
+    $(LINK)$(XLINKFLAGS)/EXE=$(MMS$TARGET) $(MMS$SOURCE:.MAR=.OBJ)
+
+
+.rno.mem :
+    runoff $(RNOFLAGS) $<
+
+.icn.icx :
+    icont $<
+
+clean :
+        - delete/log *.obj.*, *.exe.*, *.lis.*, *.map.*, *.mem.*, *.icx.*, *.u1.*, *.u2.*
+%%E 1

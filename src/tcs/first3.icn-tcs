@@ -1,0 +1,23 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 16:12:19 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+procedure process_file (file)
+  while line := read (file) do
+    write (line[1:4])
+end # process_file
+
+procedure main (arguments)
+  local infile, line
+
+  if *arguments = 0 then 
+    process_file (&input)
+  else
+    every filename := !arguments do {
+      infile := open (filename, "r") | stop ("first3: unable to open \"" || filename || "\".")
+      process_file (infile)
+      close (infile)
+    }
+end # main
+%%E 1

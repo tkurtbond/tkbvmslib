@@ -1,0 +1,325 @@
+procedure make_tags_module_ident
+    return "V00-001"
+endprocedure ! make_tags_module_ident
+
+procedure make_tags_module_init
+    whitespace := "	 ";
+    digits := "1234567890";
+    basic_id_chars := "abcdefghijclmnopqrstuvwxyz1234567890_.$%";
+    do_line_no := 0;
+    do_labels := 1;
+    num_chars := 0;
+endprocedure ! make_tags_module_init
+
+
+variable 
+    basic_id_chars,
+    digits,
+    do_labels,
+    do_line_no,
+    num_chars,
+    tags_buf,
+    temp_buf,
+    whitespace,
+    zzz
+    ;
+
+
+
+procedure find_basic_tags_in_buffer(in_buf)
+    local old_buf;
+    
+    old_buf := current_buffer;
+    num_chars := 0;
+    position (beginning_of (in_buf));
+    loop
+        position (line_begin);
+        process_basic_line;
+        num_chars := num_chars + length (current_line) + 1; ! +1 for newline
+        move_vertical (1);
+        exitif mark (none) = end_of (in_buf);
+    endloop;
+    position (old_buf);
+    return 1;
+endprocedure ! find_basic_tags_in_buffer
+
+
+procedure process_basic_line
+    skip_whitespace;
+    if do_line_no then
+        match_line_no_and_save;
+    else
+        skip_line_no;
+    endif;
+    if do_labels then
+        match_label_and_save;
+    else
+        skip_label;
+    endif;
+    
+    match_fun_and_save;
+endprocedure ! process_basic_line
+
+
+procedure skip_whitespace
+    local rf;
+    rf := search_quietly (anchor + span (whitespace), forward);
+    if rf <> 0 then
+        position (end_of (rf));
+        move_horizontal (1); 	!Move off last char of range
+        return 1;
+    endif;
+    return 0;
+endprocedure ! skip_whitespace
+
+
+procedure match_line_no_and_save
+    local rf, line_no, char_offset, p, full_tag, fun_name;
+    
+    rf := search_quietly (anchor + span (digits), forward);
+    if rf <> 0 then
+        char_offset := current_offset;
+        position (line_begin);
+        p := mark (none);
+        position (end_of (rf));
+        move_horizontal (1);
+        full_tag := str (create_range (p, end_of (rf)));
+        fun_name := str (rf);
+        line_no := get_info (p, "record_number");
+        save_entry (fun_name, full_tag, line_no, num_chars + char_offset);
+        skip_whitespace;
+        return 1;
+    endif;
+    return 0;
+endprocedure ! match_line_no_and_save
+
+
+procedure skip_line_no
+    local rf;
+    rf := search_quietly (anchor + span (digits), forward);
+    if rf <> 0 then
+        position (end_of (rf));
+        move_horizontal (1);		!move off last char of range
+        skip_whitespace;
+        return 1;
+    endif;
+    return 0;
+endprocedure ! skip_line_no
+
+
+procedure match_label_and_save
+    local rf, p, fun_name, full_tag, line_no, char_offset;
+
+    rf := search_quietly (anchor + ((span (basic_id_chars) + 
+    				     (span (whitespace) |"") + ":")
+                                    @fun_name)
+                                   + (notany (":") | line_end), forward);
+    if rf <> 0 then
+        position (line_begin);
+        p := mark (none);
+        line_no := get_info (p, "record_number");
+        position (end_of (rf));
+        move_horizontal (-1);
+        full_tag := str (create_range (p, mark (none)));
+        char_offset := get_info (beginning_of (fun_name), "offset");
+        save_entry (str (fun_name), full_tag, line_no, num_chars +
+	            char_offset);
+	position (end_of (rf));
+        skip_whitespace;
+        return 1;
+    endif;
+    return 1;
+endprocedure ! match_label_and_save
+
+
+procedure skip_label
+    local rf;
+    rf := search_quietly (anchor + (span (basic_id_chars) 
+        + (span (whitespace) | "") + ":") + (notany (":") | line_end), forward);
+    if rf <> 0 then
+        position (end_of (rf));
+        skip_whitespace;
+        return 1;
+    endif;
+    return 0;
+endprocedure ! skip_label
+
+
+procedure match_fun_and_save;
+    if match_record_and_save then
+        return 1;
+    endif;
+    if match_sub_or_prog_and_save then
+        return 1;
+    endif;
+    if match_function_and_save then
+        return 1;
+    endif;
+    if match_def_and_save then 
+        return 1;
+    endif;
+    return 0;
+endprocedure ! match_fun_and_save
+
+
+procedure match_record_and_save
+    local rf, fun_name, line_no, char_offset, p, full_tag;
+    
+    rf := search_quietly ((anchor + "record" + span (whitespace) +
+    			   (span (basic_id_chars) @ fun_name)), 
+                          forward);
+    if rf <> 0 then
+        position (line_begin);
+        p := mark (none);
+        line_no := get_info (p, "record_number");
+        position (end_of (rf));
+        full_tag := str (create_range (p, mark (none)));
+        char_offset := get_info (beginning_of (fun_name), "offset");
+        save_entry (str (fun_name), full_tag, line_no, num_chars + char_offset);
+        move_horizontal (1); 		!move off last char of range
+        skip_whitespace;
+        return 1;
+    endif;
+    return 0;
+endprocedure ! match_record_and_save
+
+
+procedure match_sub_or_prog_and_save
+    local rf, fun_name, full_tag, line_no, char_offset, p;
+    
+    rf := search_quietly (anchor + ("sub" | "program") + span (whitespace) +
+    			  (span (basic_id_chars) @ fun_name), forward);
+    if rf <> 0 then
+        position (line_begin);
+        p := mark (none);
+        line_no := get_info (p, "record_number");
+        position (end_of (rf));
+        full_tag := str (create_range (p, mark (none)));
+        char_offset := get_info (beginning_of (fun_name), "offset");
+        save_entry (str (fun_name), full_tag, line_no, 
+        	    num_chars + char_offset);
+	move_horizontal (1);
+        skip_whitespace;
+        return 1;
+    endif;
+    return 0;
+endprocedure ! match_sub_or_prog_and_save
+
+
+procedure match_function_and_save
+    local rf, fun_name, full_tag, line_no, char_offset, p;
+    
+    rf := search_quietly ((anchor + "function" + span (whitespace) + 
+    			   span (basic_id_chars) + span (whitespace) +
+                           (span (basic_id_chars) @ fun_name)),
+                          forward);
+
+    if rf <> 0 then
+        position (line_begin);
+        p := mark (none);
+        line_no := get_info (p, "record_number");
+        position (end_of (rf));
+        full_tag := str (create_range (p, mark (none)));
+        char_offset := get_info (beginning_of (fun_name), "offset");
+        save_entry (str (fun_name), full_tag, line_no, num_chars + char_offset);
+        move_horizontal (1); 		!move off last char of range
+        skip_whitespace;
+        return 1;
+    endif;
+    return 0;
+endprocedure ! match_function_and_save
+
+
+procedure match_def_and_save
+    local rf, fun_name, full_tag, line_no, char_offset, p;
+    
+    rf := search_quietly ((anchor + ("def" | "def*") + span (whitespace) + 
+    			   span (basic_id_chars) + span (whitespace) +
+                           (span (basic_id_chars) @ fun_name)),
+                          forward);
+    if rf = 0 then
+        rf := search_quietly ((anchor + ("def" | "def*") + span (whitespace) + 
+                               (span (basic_id_chars) @ fun_name)),
+                              forward);
+    endif;
+
+    if rf <> 0 then
+        position (line_begin);
+        p := mark (none);
+        line_no := get_info (p, "record_number");
+        position (end_of (rf));
+        full_tag := str (create_range (p, mark (none)));
+        char_offset := get_info (beginning_of (fun_name), "offset");
+        save_entry (str (fun_name), full_tag, line_no, num_chars + char_offset);
+        move_horizontal (1); 		!move off last char of range
+        skip_whitespace;
+        return 1;
+    endif;
+    return 0;
+endprocedure ! match_def_and_save
+
+
+procedure save_entry (fun_name, fun_def, line_no, char_no)
+    local t, old_buf, r;
+
+    t := stringize_entry (fun_name, fun_def, line_no, char_no);
+    old_buf := current_buffer;
+    position (temp_buf);
+    r := copy_text(t);
+    position (end_of (r));
+    move_horizontal (1);
+    split_line;
+    position (old_buf);
+endprocedure ! save_entry
+
+
+procedure stringize_entry(fun_name, fun_def, line_no, char_no)
+    return fun_def + ascii (127) + str (line_no) + "," + str (char_no);
+endprocedure ! stringize_entry
+
+
+procedure make_tags
+    local tags_file_name, file_name, input_file_name, in_buf, r;
+
+    do_append := get_info (command_line, "modify");
+    if get_info (command_line, "output") then
+        tags_file_name := get_info (command_line, "output_file");
+    else
+	tags_file_name := "TAGS.";
+    endif;
+    message("Tags file: " + tags_file_name);
+    if file_search(tags_file_name) <> "" then
+        tags_buf := create_buffer ("*TAGS*", tags_file_name);
+    else
+        tags_buf := create_buffer ("*TAGS*");
+    endif;
+    temp_buf := create_buffer ("*TEMP*");
+    position (tags_buf);
+    if do_append then
+        position (end_of (tags_buf));
+    else
+        position (beginning_of (tags_buf));
+    endif;
+    input_file_name := get_info (command_line, "file_name");
+    in_buf := create_buffer ("main", input_file_name);
+    find_basic_tags_in_buffer(in_buf);
+    r := copy_text("");
+    position (end_of (r));
+    move_horizontal (1);
+    split_line;
+    r := copy_text (input_file_name + "," + 
+		    str (length (temp_buf) + 
+			 get_info (temp_buf, "record_count")));
+    position (end_of (r));
+    move_horizontal (1);
+    split_line;
+    r := copy_text (temp_buf);
+    write_file (tags_buf, tags_file_name);
+
+    return 1;
+endprocedure ! make_tags
+
+
+make_tags_module_init;
+make_tags;
+quit;

@@ -1,0 +1,27 @@
+install-programs : -
+    [-]APPLY_ALL_TO.COM -
+    [-]APPLY_TO.COM -
+    [-]ARDIFF.COM -
+    [-]AROUTDATED.COM -
+    [-]ARUNCOVERED.COM -
+    [-]ASSEMBLE.COM -
+    [-]BQINFO.COM -
+    [-]COMPILER.COM -
+    [-]DATE_TIME.COM -
+    [-]DELDIR.COM -
+    [-]DIRCOMPARE.COM -
+    [-]DIRCMP.COM -
+    [-]DIRSIZE.COM -
+    [-]DSCLIST.COM -
+    [-]KILL.COM -
+    [-]LOOP.COM -
+    [-]LS.COM -
+    [-]MAKECOMMAND.COM -
+    [-]PIPES.COM -
+    [-]QUEBATCH.COM -
+    [-]SDCL.COM -
+    [-]SHOWOPENFILES.COM -
+    [-]TCS.COM -
+    [-]TCSDIFF.COM -
+    [-]TIME_DIFF.COM -
+    ! end of install

@@ -1,0 +1,139 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 11:53:40 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+###############################################################################
+##                      
+##      Program:        A S S E M B L E . S D C L 
+##      Written By:     Thomas Kurt Bond
+##      Version:        1.00a
+##      Date:           13 Dec 85
+##
+## Description:	
+##
+## Syntax: kmac[qual] file-name[qual][+macro-lib-spec/LIB][>link-lib-spec<]
+##		where kmac is { mb | ml | mld | asm }
+##
+##	This program provides an easy way to assemble and link MACRO programs, 
+##	and allows this to be done on SYS$BATCH, through the qualifier /BATCH.
+##
+## History:
+## Ver     When    Who  What
+## 1.00a   121385  tkb  Initial Version
+## 2.0     051989  tkb  Convert to new SDCL syntax, add verify handling
+###############################################################################
+   verifying = 'f$verify(f$type(assemble_verify) .nes. "")'
+   !> ASSEMBLE.SDCL -- Easy assembly and linking of MACRO programs.
+   inqn := inquire/nopun	#set up abbrieviations 
+   wso := write sys$output
+   true = (1 .eq. 1)		#constant declarations 
+   false = (1 .eq. 2)
+   testing = false		#True while debuging this program 
+   if (f$locate("/",p2) .eq. 0 ) {
+      ##If first character of p2 is a /, someone used a qualifier on the 
+      ##command, like this "asm/list kurt", so it is p2, and p3 is filename
+      asm_type = p1 + p2
+      asm_file = p3
+   } else {
+      asm_type = p1
+      asm_file = p2
+   }
+   if (testing) {
+      wso "Original Asm_type ''asm_type'"
+      wso "Original Asm_file ''asm_file'"
+   }
+   asm_lib = ""
+   link_lib = ""
+   ##Get all the specified macro libraries from the asm_file 
+   ##They start with + and end with /LIB 
+   plus_pos = f$locate("+",asm_file)
+   while (plus_pos .ne. f$length(asm_file)) {
+      lib_pos = f$locate("/LIB", asm_file)
+      temp = f$extract(plus_pos, lib_pos - plus_pos + 4, asm_file)
+      asm_lib = asm_lib + temp
+      asm_file = asm_file - temp
+      plus_pos = f$locate("+", asm_file)
+   }
+   if (testing) wso "Original Asm_lib ''asm_lib'"
+
+   ##Get the specified link-time libraries form the asm_file 
+   ##They start with > and end with <
+   
+   angle_o = f$locate(">", asm_file)
+   if (angle_o .ne. f$length(asm_file)) {
+      angle_e = f$locate("<", asm_file)
+      temp = f$extract(angle_o,angle_e - angle_o + 1, asm_file)
+      asm_file = asm_file - temp
+      link_lib = link_lib + "," + temp - ">" - "<"
+   }
+   if (testing) wso "Original Link_lib ''link_lib'"
+
+   ##Get all the qualifers out of the asm_file, file to assemble 
+   do {
+      pos = f$locate("/", asm_file)
+      length = f$length(asm_file)
+      if (pos .ne. length) {
+         asm_type = asm_type + f$extract(pos, length, asm_file)
+         asm_file = f$extract(0, pos, asm_file)
+      }
+      if (asm_file .eqs. "") asm_file = f$trnlnm("EDIT_FILE")
+      if (asm_file .eqs. "") inqn asm_file "File to Assemble > "
+      if (asm_file .eqs. "")		#Must not have wanted to assemble 
+          exit (1 .or. (f$verify(verifying) .and. 0))
+   } while ( f$locate("/", asm_file) .ne. f$length(asm_file))
+
+   cur_dir = f$directory()
+   name = f$parse(asm_file,,,"NAME")
+   log_file = cur_dir + name + ".log"
+   out_file = name + ".com"
+   asm_opt = ""
+   link_opt = ""
+   length = f$length(asm_type)
+   if (length .ne. f$locate("/LIS", asm_type)) asm_opt = asm_opt + "/LIST"
+   if (length .ne. f$locate("/DEB", asm_type)) {
+      asm_opt = asm_opt + "/DEBUG"
+      link_opt = link_opt + "/DEBUG"
+   }
+   link_opt = link_opt + "/NOMAP"
+   batch_mode = (length .ne. f$locate("/BAT", asm_type))
+   ##ASM allows you to assemble without iomac and iomod 
+   if ( .not. f$locate("ASM", asm_type) .ne. length) {
+      asm_lib = asm_lib + "+''f$trnlnm("lib_dir")'iomac/lib"
+      link_lib = link_lib + ",''f$trnlnm("lib_dir")'iomod"
+   }
+   
+   ##Write all this to a file so can submit it to batch if need to 
+   open/write f 'out_file'
+   write f "$! Batch Assemble by T.K. Bond"
+   write f "$! ''f$time()'"
+   write f "$ on control_y then goto the_end"
+   write f "$ on error then goto the_end"
+   write f "$ set def ''cur_dir'"
+   write f "$ write sys$output ""Assembling ''asm_file'"" "
+   write f "$ macro''asm_opt' ''asm_file'.mar''asm_lib'"
+   write f "$ if f$search(""''asm_file.OBJ"") .eqs. """" then goto the_end"
+   write f "$ write sys$output ""Linking ''asm_file'"" "
+   write f "$ link''link_opt' ''asm_file'.OBJ''link_lib'"
+   write f "$ delete/nolog ''asm_file'.OBJ;*"
+   write f "$!"
+   write f "$ the_end:"
+   write f "$ delete/nolog ''out_file';*"
+   write f "$!"
+   close f
+   
+   
+   if (.not. batch_mode) asm_line = "@" + out_file
+   else asm_line = "submit/noprint/notify/log=" + log_file + " " + out_file
+   if (.not. testing) 'asm_line'
+   else {
+      wso "Asm_file ''asm_file'"
+      wso "Asm_opt  ''asm_opt'"
+      wso "Asm_lib  ''asm_lib'"
+      wso "Link_opt ''link_opt'"
+      wso "Link_lib ''link_lib'"
+      wso "Asm_line ''asm_line'"
+   }
+the_end:
+      exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 1

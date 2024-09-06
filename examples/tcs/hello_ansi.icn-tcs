@@ -1,0 +1,14 @@
+%%s 0/0/0
+%%d D 1.1 21-Aug-24 13:32:33 tkb 1 0
+%%c Use the screen manipulation routines from ansi.icn to say hello.
+%%T
+%%I 1
+link ansi
+
+procedure main ()
+  ED ()
+  CUP (10, 10)
+  writes ("Hello!")
+  reads ()
+end # main
+%%E 1

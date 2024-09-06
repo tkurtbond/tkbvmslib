@@ -1,0 +1,18 @@
+10 me:1,4
+10 me: record xxx1,15
+program try_it5,61
+10	sub my_sub9,98
+	def* long myfunc%11,125
+20 function long whatever17,209
+10 me:1,4
+10 me: record xxx1,15
+program try_it5,61
+10	sub my_sub9,98
+	def* long myfunc%11,125
+20 function long whatever17,209
+10 me:1,4
+10 me: record xxx1,15
+program try_it5,61
+10	sub my_sub9,98
+	def* long myfunc%11,125
+20 function long whatever17,209

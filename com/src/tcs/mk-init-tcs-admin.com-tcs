@@ -1,0 +1,7 @@
+%%s 0/0/0
+%%d D 1.1 06-Sep-24 13:26:19 tkb 1 0
+%%c A program for generating a command procedure for inital TCS checkins.
+%%T
+%%I 1
+$ sedit "s/%{?+}$/$ @com_src:initial-tcs-checkin $1" <t:src.lis >t:x.com
+%%E 1

@@ -1,0 +1,21 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:31 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$	sublib__status = %x10000000
+$	sublib__success = sublib__status + %x0001
+$	on control_y then exit sublib__status + %x0004
+$	on warning then exit $status .or. %x100000000
+$
+$	display = "write sys$output"
+$	goto 'p1
+
+$! Title:	Title
+$! 
+$! Synopsis:	Synopsis
+$!
+$! Parameters:	P2: 
+$!
+$! Result:	
+%%E 1

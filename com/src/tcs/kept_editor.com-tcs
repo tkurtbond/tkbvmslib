@@ -1,0 +1,111 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:27 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ verify = 'f$verify(f$type(kept_editor_verify) .nes. "")'
+$!> KEPT_EDITOR.COM -- Set up editor in subprocess
+$!
+$!-----------------------------------------------------------------------------
+$! Description:
+$!	Command file for use on VMS to spawn an Emacs process
+$! 	that can be suspended with C-z and will not go away
+$! 	when other programs are run.  This is the normal way
+$! 	for users to invoke Emacs on VMS; the command "emacs"
+$! 	is normally defined to execute this file.  That definition, 
+$!	and other definitions used by it, are done by `emacs.com'.
+$! 	Users who want to use Emacs should have their `login.com' files
+$! 	execute `emacs.com', which is to be found in this directory.
+$!
+$! History:
+$! ?? SEP 1985				Joe Kelsey, FlexComm Corp
+$!	Initial Version (so far as I know).
+$! 15 AUG 1989				Thomas Kurt Bond, Raven Inc.
+$!	Add verify handling and clean up format
+$!
+$! Comments:
+$!
+$! For some reason, field test 4.6 breaks emacs unless lined with 4.6 run
+$! time library. Likewise, 4.6 images won't run on 4.4 and 4.5 systems.
+$! this command file has been changed so that emacs4_6 is a valid emacs
+$! name
+$!-----------------------------------------------------------------------------
+$	edit		= ""
+$	name		= p1 + " " + f$trnlnm("TT") - ":"
+$	priv_list	= f$setprv("NOWORLD, NOGROUP")
+$	pid 		= 0
+$ 10$:
+$ 	proc		= f$getjpi(f$pid(pid), "PRCNAM")
+$ 	if proc .eqs. name then -
+$		goto attach
+$ 	if pid .ne. 0 then -
+$		goto 10$
+$ spawn:
+$	args		= p2 + " " + p3 + " " + p4 + " " + p5 + " " + -
+    			  p6 + " " + p7 + " " + p8
+$ 	priv_list	= f$setprv(priv_list)
+$ 	write sys$error -
+"[Spawning a new Kept ''P1']"
+$	if (p1 .nes. "TPU") .and. (p1 .nes. "EVE") then -
+$		goto check_emacs
+$ 	define/user	sys$input	sys$command
+$ 	spawn	/process="''NAME'" -
+    		/nolog -
+    		edit/tpu 'args'
+$ 	goto quit
+$ check_emacs:
+$	if p1 .nes. "EMACS" then -
+$		goto check_emacs4_6
+$	define/user	sys$input	sys$command
+$	spawn	/process="''NAME'" -
+		/nolog -
+		runemacs 'args'
+$	goto quit
+$ check_emacs4_6:
+$	if p1 .nes. "EMACS4_6" then -
+$		goto un_kempt
+$	define/user	sys$input	sys$command
+$	spawn	/process="''NAME'" -
+		/nolog -
+		runemacs4_6 'args'
+$	goto quit
+$ un_kempt:
+$! The editor is unruly - spawn a process and let the user deal with the
+$! editor himself.
+$	spawn	/process="''NAME'" -
+		/nolog
+$	goto quit
+$ attach:
+$ 	priv_list	= f$setprv(priv_list)
+$	if "''p2'" .nes. "" 
+$	then 
+$	    if p1 .eqs. "EMACS" 
+$	    then 
+$ 		the_arg = f$parse(p2,f$environment("DEFAULT"),,,"SYNTAX_ONLY")
+$		!for emacs we leave out the version...
+$		the_arg = f$parse(the_arg, ,, "DEVICE", "SYNTAX_ONLY") -
+			+ f$parse(the_arg, ,, "DIRECTORY", "SYNTAX_ONLY") -
+			+ f$parse(the_arg, ,, "NAME", "SYNTAX_ONLY") -
+			+ f$parse(the_arg, ,, "TYPE", "SYNTAX_ONLY")
+$		the_arg = f$edit(the_arg, "LOWERCASE")
+$		define/job/nolog emacsarg "''the_arg'"
+$	    endif ! emacs
+$	    if p1 .eqs. "EVE" 
+$	    then 
+$ 		the_arg = f$parse(p2,f$environment("DEFAULT"),,,"SYNTAX_ONLY")
+$		define/job/nolog keptevearg "''the_arg'"
+$	    endif ! eve
+$	endif
+$ 	write sys$error -
+"[Attaching to process ''NAME']"
+$ 	define/user	sys$input	sys$command
+$ 	attach "''NAME'"
+$ quit:
+$ 	if "''f$trnlnm("EMACSARG")'" .nes. "" then deassign/job emacsarg
+$	if "''F$trnlnm("KEPTEVEARG")'" .nes. "" then deassign/job keptevearg
+$ 	write sys$error -
+"[Attached to DCL in directory ''F$TRNLNM("SYS$DISK")'''F$DIRECTORY()']"
+$! 	if verify then -
+$!		set verify
+$	exit (1 .or. (f$verify(verify) .and. 0))
+%%E 1

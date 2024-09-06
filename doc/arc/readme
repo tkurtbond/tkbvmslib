@@ -1,0 +1,5 @@
+I've just split this into an open ``incoming'' directory and
+a read-only base/pub direectory.  If you're looking for your
+file or directory, have a look in incoming, I've just moved
+them there.  Nothing has been lost!
+--dave

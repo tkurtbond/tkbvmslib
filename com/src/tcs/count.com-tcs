@@ -1,0 +1,49 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:23 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ WSO       = "WRITE SYS$OUTPUT"
+$ INQ       = "INQ/NOPUN"
+$ WRT       = "WRITE TEMP"
+$ ON CONTROL_Y THEN GOTO THE_END
+$ PID$ = F$GETJPI("","PID")
+$ TEMPASQ = "TEMPASQ_" + PID$ + ".COM"
+$ !
+$ IF P1 .EQS. ""
+$ THEN
+$    ASK_FIL1:
+$    INQ P1 "Filename? "
+$    IF P1 .EQS. "" THEN GOTO ASK_FIL1
+$    ASK_FLD1:
+$    INQ P2 "Fieldname? "
+$    IF P2 .EQS. "" THEN GOTO ASK_FLD1
+$ ENDIF
+$ !
+$ IF P2 .EQS. ""
+$ THEN
+$    ASK_FLD2:
+$    INQ P2 "Fieldname? "
+$    IF P2 .EQS. "" THEN GOTO ASK_FLD2
+$ ENDIF
+$ !-
+$ FIRST = P1
+$ IF F$LOCATE("/POI",FIRST) .NE. F$LENGTH(FIRST)
+$ THEN
+$    SLASH = F$LOCATE("/POI",FIRST)
+$    FIL = F$EXTRACT(0,SLASH,FIRST)
+$    PHRASE = ""
+$ ELSE
+$    PHRASE = "FROM ALL ''FIRST'"
+$ ENDIF
+$ !-
+$ OPEN/WRITE TEMP 'TEMPASQ'
+$ WRT "$ RUN DMS:ASQ"
+$ WRT "DISPLAY ''P2' SUM(1) TOTAL ''PHRASE' ORDER ''P2' GROUP ''P2' TO TT:"
+$ WRT "EXIT"
+$ THE_END:
+$ CLOSE TEMP
+$ @ 'TEMPASQ'
+$ DEL/NOCONF 'TEMPASQ';*
+$ EXIT
+%%E 1

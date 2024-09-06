@@ -1,0 +1,21 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:49 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int
+main (int argc, char **argv)
+{
+  int i;
+  for (i = 0; i < 5; i++)
+    {
+      printf ("\a");
+      sleep (1);
+    }
+  exit (EXIT_SUCCESS);
+}
+%%E 1

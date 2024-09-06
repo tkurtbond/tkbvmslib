@@ -1,0 +1,9 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:25 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$! fcms.com
+$   @fcms$data:[fcms.exe]fcms_assigns.com
+$!  Now you can type '$ FCMS'
+%%E 1

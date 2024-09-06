@@ -1,0 +1,46 @@
+%%s 1/1/31
+%%d D 1.2 06-Sep-24 13:18:03 tkb 2 1
+%%c Rename [MPL.TKB.LIB] to [MPL.TKB.TKBVMSLIB].
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:22 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ !> ACCLOGICALS.COM -- Define account specific logical names.
+$ !a--------------------------------------------------------------------------!
+$ !b
+$ !c Logical Name definitions for Account specific items
+$ !d
+$ !e	root is a directory spec without the closing `]', set in LOGIN.COM
+$ !f	p1 is "FILLER"
+$ !g	p2 is optionally "/job"
+$ !h--------------------------------------------------------------------------!
+$ define 'p2' adm_exe			'root'.adm_exe]
+$ define 'p2' edtini		        sys$login:edtini.edt
+$ define 'p2' ex                        mpl$data:[mpl.tkb.examples]
+$ define 'p2' lnk$library	        dms:spl.olb
+$! define 'p2' lnk$library_1	        frg_lib:frg_library.olb
+$ define 'p2' peve$mail_signature       sys$login:.signature
+$ define 'p2' news_ini		        sys$login:news_ini.defs
+$ define 'p2' news_organisation         "Adminisoft, Inc."
+$ define 'p2' t				'root'.tmp]
+$ define 'p2' t_root /trans=conc        'root'.tmp.]
+$ define 'p2' scr		        'root'.scratch]
+$ if f$edit(f$getjpi("","USERNAME"),"TRIM") .eqs. "TKB" -
+	then define 'p2' sys$scratch	'root'.tmp]
+$ define 'p2' work_dir		        'root'.work]
+$
+$ define/trans=conc mpl_root mpl$data:[mpl.]
+$ define/trans=conc tkb_root mpl$data:[mpl.tkb.]
+%%D 2
+$ define/trans=conc lib_root mpl$data:[mpl.tkb.lib.]
+%%E 2
+%%I 2
+$ define/trans=conc lib_root mpl$data:[mpl.tkb.tkbvmslib.]
+%%E 2
+$ define/trans=conc emx$data EMX$DIST:[000000.EMACS-18.59.]
+$! define tkb$data dua400: ! Now in SYS$MANAGER:SYLOGICALS.COM!  Bwahahahahah!
+$! 2023-11-02: Should this only be the drives in MPL$DATA* logicals?  No.
+$ define mpldisks dua0:,dua1:,dua2:,dua300:,dua302:,dua303:,$1$dia1:,$1$dia2,$1$dia4:
+$ exit ! acclogicals.com
+%%E 1

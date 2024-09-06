@@ -1,0 +1,10 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:30 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ scm :==  $MPL$DATA:[MPL.TKB.SCM]SCM.EXE
+$ vmsscm :== $MPL$DATA:[MPL.TKB.SCM]VMSSCM.EXE
+$ smgscm :== $MPL$DATA:[MPL.TKB.SCM]SMGSCM.EXE
+$ define lib$scheme MPL$DATA:[MPL.TKB.SLIB]
+%%E 1

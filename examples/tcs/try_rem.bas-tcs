@@ -1,0 +1,14 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:52 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+program try_rem
+    option type = explicit, constant type = integer, &
+        size = integer long, size = real double 
+    REM This is a remark
+        And this is also a remark
+
+    print "Try REM Continuation"
+end ! try_rem
+%%E 1

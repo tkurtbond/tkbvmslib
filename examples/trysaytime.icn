@@ -1,0 +1,5 @@
+# trysaytime.icn - Print the time in something like natural speech.
+link saytime
+procedure main ()
+  write (saytime ())
+end # main

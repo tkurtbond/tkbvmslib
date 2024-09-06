@@ -1,0 +1,12 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:28 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$!> MK.COM -- Run MMK with a preceeding header to make it obvious where the mmk output starts.
+$ header = "################################################################################"
+$ write sys$output header
+$ write sys$output header
+$ write sys$output header
+$ mmk 'p1 'p2 'p3 'p4 'p5 'p6 'p7 'p8
+%%E 1

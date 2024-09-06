@@ -1,0 +1,185 @@
+!	EVEPLUS_KERNEL.TPU	 - Routines required by multiple modules
+!
+!	Routine to insert text, even in overstrike mode
+!
+
+procedure eveplus_insert_text(the_text)		! Copy_text in insert mode
+
+LOCAL	old_mode;
+    
+    old_mode := get_info(current_buffer, "mode");
+    set(INSERT, current_buffer);
+    copy_text(the_text);
+    set(old_mode, current_buffer);
+
+endprocedure;
+
+procedure eveplus_search_quietly(target, dir)	! Search w/o "String not found" 
+
+on_error
+    return(0);
+endon_error;
+
+    return(search(target, dir));
+
+endprocedure;
+
+procedure eveplus_replace(old, new)		! Simple replace function
+
+local	ptr,
+	old_mode;
+
+on_error
+    return(0);
+endon_error;
+
+    ptr := search(old, current_direction);
+    if (ptr <> 0) then
+        position(ptr);
+        erase(ptr);
+        old_mode := get_info(current_buffer, "mode");
+        set(INSERT, current_buffer);
+        copy_text(new);
+        set(old_mode, current_buffer);
+        return(1);
+    else
+        return(0);                                               
+    endif;
+
+endprocedure;
+
+!	This routine translates a buffer name to a buffer pointer
+!
+!	Inputs:
+!		buffer_name	String containing the buffer name
+!
+procedure eveplus_find_buffer(buffer_name)	! Find a buffer by name
+
+local	the_buffer,		! Used to hold the buffer pointer
+	the_name;		! A read/write copy of the name
+
+    the_name := buffer_name;
+    change_case(the_name, UPPER);
+    the_buffer := get_info(buffers, "first");
+    loop
+        exitif (the_buffer = 0);
+        exitif (the_name = get_info(the_buffer, "name"));
+        the_buffer := get_info(buffer, "next");
+    endloop;
+    return the_buffer;
+
+endprocedure
+
+procedure eveplus_defined_procedure(x)	! See if a procedure is defined
+
+local	temp;
+              
+on_error
+
+    if (error = tpu$_multiplenames) then
+        return(1);
+    else
+        return(0);
+    endif;
+
+endon_error;
+
+    temp := expand_name(x, PROCEDURES);
+    return(1);
+
+endprocedure;
+
+       
+!                                                                       Page 2
+procedure eveplus_set_shift_key ( new_shift_key ) ! Define shift key, save old
+local	old_shift_key;
+
+old_shift_key := eveplus_g_shift_key;
+
+eveplus_g_shift_key := new_shift_key;
+if new_shift_key =  ctrl_y_key then
+	set (shift_key, key_name (pf1, shift_key));
+	undefine_key ( old_shift_key );
+else
+	set ( shift_key, new_shift_key );
+	define_key ("execute (lookup_key (eve$get_shift_key, program))",
+            new_shift_key, "shift key");
+endif;
+
+return ( old_shift_key );
+
+endprocedure
+
+!                                                                       Page 3
+procedure eveplus_key 	! Redefine a key, saving old definition
+	( new_pgm,	! Valid 1st argument for define_key builtin
+	  default_key,	! Default keyname if user hasn't defined one
+	  new_doc,	! Valid 3rd argument for define_key builtin
+	  key_string )	! String containing name for user defined keys
+
+! 1) Determine if we have a user specified key; if not, use default.
+! 2) Save the present definition & doc. of the user specified key.
+! 3) Do a define key on the new key information.
+
+! A note on methods: 
+
+! We use a string argument for the variable name of the user specified key
+! so that: 1) We can successfully pass it to this procedure if its not defined.
+!          2) We can generate variables to hold the old key's info, avoiding
+!             passing more arguments for these.
+
+! We combine the string argument with string constants to form valid TPU
+! statements which we then execute.  (Ha! We TPU programmers can limp
+!                                     along without LISP very well thanks!)
+on_error endon_error;
+eveplus$x := default_key;	! default, to global variables; the variables
+eveplus$x_string := key_string;	! Move arguments, which are local by
+eveplus$x_old_pgm := 0;		! in and EXECUTE statement are all global.
+
+! Determine if we have a user specified key; if not, use default.
+                  
+if expand_name ( eveplus$x_string, variables ) <> eve$x_null then
+    execute (	'if(get_info('+eveplus$x_string+',"type")=integer)then '
+			+'eveplus$x:='+eveplus$x_string+';' 
+		+'else '
+	  		+eveplus$x_string+':=eveplus$x;' 
+	+'endif;' );
+else
+	execute ( eveplus$x_string+ ':=  eveplus$x;' );
+endif;    
+
+! Save the present definition & doc. of the user specified key
+! one exists.
+
+eveplus$x_old_pgm := lookup_key ( eveplus$x, program); 
+
+if (get_info ( eveplus$x_old_pgm, "type") = program) then
+	execute( eveplus$x_string 
+		+'_doc := lookup_key ( eveplus$x, comment);'
+		+eveplus$x_string 
+		+'_pgm := lookup_key ( eveplus$x, program);');
+else                                       
+	execute( eveplus$x_string +'_doc := "~none~";');
+endif;
+
+
+! Do a define key on the new key information
+
+define_key ( new_pgm, eveplus$x, new_doc );
+endprocedure                      
+             
+!                                                                       Page 4
+procedure eveplus_restore_key ( the_key ) ! Restore a saved key definition.
+
+! This is the companion procedure to EVEplus_key, and restores the previous
+! definition of a key saved during EVEplus_key.   See EVEplus_key for
+! more info.
+on_error endon_error;
+eveplus$x_string := the_key;
+if expand_name ( eveplus$x_string+'_pgm', variables ) <> eve$x_null then
+	execute ( 'define_key('+eveplus$x_string+'_pgm,'
+		+eveplus$x_string+',' +eveplus$x_string+'_doc); ');
+else 
+	execute ( 'undefine_key ('+eveplus$x_string+'); ');
+endif;
+endprocedure

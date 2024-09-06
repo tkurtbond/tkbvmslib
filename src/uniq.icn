@@ -1,0 +1,10 @@
+procedure main ()
+  local line, last
+  last := ""
+  while line := read () do {
+    if line ~== last then {
+      last := line
+      write (line)
+    }
+  }
+end # main

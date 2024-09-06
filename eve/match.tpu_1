@@ -1,0 +1,245 @@
+procedure match_module_ident
+    return "V01-001"
+endprocedure ! match_module_ident
+
+
+
+procedure match_module_init		! from eveplus
+    eve$arg1_set_matching := 'string';
+    eve$arg1_set_nomatching := 'string';
+    eve$arg1_set_flashing := 'string';
+    eve$arg1_set_noflashing := 'string';
+    eveplus_matchable_open := "([{<«'`"""; 
+    eveplus_matchable_close  := ")]}>»''""";
+endprocedure;
+
+
+
+
+procedure eve_set_matching(the_arg)	! Turn on electric open parens
+LOCAL	the_key,
+        the_keys,
+	ptr;
+
+    the_keys := the_arg;
+
+    if (the_keys = "") then
+        the_keys := read_line("Match what characters: ");
+    endif;
+    ptr := 1;
+    loop
+        exitif (ptr > length(the_keys));
+        the_key := substr(the_keys, ptr, 1);
+        if (index(eveplus_matchable_open, the_key) <> 0) then
+            define_key("eveplus_insert_matched", key_name(the_key), " typing");
+        else
+            message('"' + the_key + '" is not matchable');
+            return;
+        endif;
+        ptr := ptr + 1;  
+    endloop;
+
+endprocedure;
+
+procedure eve_set_nomatching(the_arg)		! Turn off electric open parens
+LOCAL	the_key,
+        the_keys,
+	ptr;
+
+    the_keys := the_arg;
+
+    if (the_keys = "") then
+        the_keys := read_line("Remove matching for what charcters: ");
+    endif;
+    ptr := 1;
+    loop
+        exitif (ptr > length(the_keys));
+        the_key := substr(the_keys, ptr, 1);
+        if (index(eveplus_matchable_open, the_key) <> 0) then
+            undefine_key(key_name(the_key));
+        else
+            if (index(eveplus_matchable_close, the_key) = 0) then
+                message('"' + the_key + '" is not matchable');
+                return;
+            endif;
+        endif;
+        ptr := ptr + 1;
+    endloop;
+
+endprocedure;
+
+procedure eveplus_insert_matched                ! Insert the two caharcters
+LOCAL   the_key,
+        which;
+
+    the_key := ascii(last_key);
+    which := index(eveplus_matchable_open, the_key);
+    if (which <> 0) then
+        eveplus_insert_text(the_key);
+        eveplus_insert_text(substr(eveplus_matchable_close, which, 1));
+        move_horizontal(-1);
+    else
+        message("That key isn't matchable.");
+        return;
+    endif;
+
+endprocedure
+
+! Insert the second of two match characters (close character), and display
+! the line with the matching open character in the message window, with
+! the open character highlighted.  Try to handle quotes by skipping over
+! strings when encountered - doesn't work perfectly if already in a quoted
+! strings.  Doesn't handle comments.
+
+! Parameters:
+!
+!       match_chars             String - characters to be matched; e.g. "()"
+!       quote_chars             String - quote characters; e.g. "'"""
+
+procedure eveplus_match (match_chars, quote_chars)      ! Find the open paren
+
+local this_position,            ! Marker - current cursor position
+      right_matches,            ! Integer - number of opens to close
+      all_chars,                ! String - match_chars + quote_chars
+      match_pattern,            ! Pattern - any (all_chars)
+      match_position,           ! Marker - current position during searches
+      this_quote;               ! String - current quote character
+
+    on_error
+        ! Just continue
+    endon_error;
+
+    message("match chars: " + match_chars);
+    if length (match_chars) <> 2 then
+        message ("Must have 2 characters to match");
+        return;
+    endif;
+
+    copy_text (substr (match_chars, 2, 1));
+    this_position := mark (none);
+    right_matches := 1;
+    move_horizontal (-1);
+    move_horizontal(-1);
+    all_chars := match_chars + quote_chars;
+    match_pattern := any (all_chars);
+    message("all chars: " + all_chars);
+    loop
+	message("top of loop");
+        match_position := search (match_pattern, reverse);
+        if match_position = 0 then 
+	    message("no match found at top of loop");
+        endif;
+        exitif match_position = 0;
+        position (match_position);
+!	return 1;
+        if index (quote_chars, current_character) > 0 then
+            this_quote := current_character;
+            move_horizontal (-1);           
+            match_position := search (this_quote, reverse);
+            exitif match_position = 0;
+            position (match_position);
+        else
+            if current_character = substr (match_chars, 1, 1) then
+                right_matches := right_matches - 1;
+            else
+                right_matches := right_matches + 1;
+                move_horizontal(-1);
+           endif;
+        endif;
+        exitif right_matches = 0;
+        message("right matches: " + str(right_matches));
+    endloop;
+
+    if right_matches = 0 then
+        eveplus_display_line;
+    else
+        message ("No matching parentheses found");
+    endif;
+
+    position (this_position);
+
+endprocedure;
+
+! Internal routine for eveplus_match
+! Display current line in message window, with current position highlighted
+
+procedure eveplus_display_line          ! Display the matching line
+
+local this_position,            ! Marker - current cursor position
+      this_line,                ! String - current line
+      start_of_line,            ! Marker - Start of current line
+      this_offset;              ! Integer - offset of this_position
+
+    this_position := mark (blink);
+    this_offset := current_offset;
+    move_horizontal (- current_offset);
+    start_of_line := mark (none);
+    move_horizontal (length (current_line));
+    this_line := create_range (start_of_line, mark (none), none);
+    message (this_line);
+    position (end_of (message_buffer));
+    move_vertical (-1);
+    move_horizontal (this_offset);
+    eveplus_this_position := mark (blink);
+    position (this_position);
+
+endprocedure;
+
+procedure eve_set_flashing(arg)                 ! Turn on flashing parens
+LOCAL   the_key,
+        the_keys,
+        key_number,
+        ptr;
+
+    eve$prompt_string(arg,
+                      the_keys,
+                     "Flash what characters: ",
+                     "No flashing set");
+
+    ptr := 1;
+    loop
+        exitif (ptr > length(the_keys));
+        the_key := substr(the_keys, ptr, 1);
+        key_number := index(eveplus_matchable_close, the_key);
+        if (key_number <> 0) then
+            define_key ("eveplus_match ('" 
+                        + substr(eveplus_matchable_open, key_number, 1)
+                        + the_key
+                        + "', '""''')",
+                        key_name (the_key),
+                        " typing");
+        else
+            message('"' + the_key + '" is not matchable');
+            return;
+        endif;
+        ptr := ptr + 1;  
+    endloop;
+
+endprocedure;
+
+procedure eve_set_noflashing(arg)               ! Turn off falshing parens
+LOCAL   the_key,
+        the_keys,
+        ptr;
+
+    eve$prompt_string(arg,
+               the_keys,
+               "Remove flashing for what charcters: ",
+               "No flashing characters removed");
+
+    ptr := 1;
+    loop
+        exitif (ptr > length(the_keys));
+        the_key := substr(the_keys, ptr, 1);
+        if (index(eveplus_matchable_close, the_key) <> 0) then
+            undefine_key(key_name(the_key));
+        else
+            if (index(eveplus_matchable_open, the_key) = 0) then
+                message('"' + the_key + '" is not matchable');
+                return;
+            endif;
+        endif;
+        ptr := ptr + 1;
+    endloop;
+
+endprocedure;

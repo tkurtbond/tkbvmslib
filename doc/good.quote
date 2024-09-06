@@ -1,0 +1,38 @@
+
+		One form to rule them all,
+		One form to find them,
+		One form to bring them all,
+		And in the darkness bind them,
+		In the land of machinery, where the symbols lie.
+
+			-- Quoted by Larry Wall, lwall@netlabs.com, opposing
+			the use of Lisp.  (Considering what the syntax and  
+			semantics of perl are like, I'm not surprised that he 
+			has wildly different views of what a language
+			should be.)
+
+
+-------------------------------------------------------------------------------
+
+	Perhaps being a complete idiot was overambitious.  (From now on 
+	I'll settle for moderate stupidity.)
+
+-------------------------------------------------------------------------------
+
+"Extremism in the elimination of dangling references and memory leaks is
+no vice."  -- Quoted by (and authored by?) Scott McKay in comp.lang.lisp
+
+"Practise safe hex: program in Lisp." -- Tim Larkin, in comp.lang.lisp
+
+
+-------------------------------------------------------------------------------
+
+The machine is a disease: avoid it whenever you can. 
+Practise safe hex: program in Lisp.
+
+Tim Larkin
+Federal Nutrition Laboratory
+Tower Road
+Ithaca, New York
+tsl1@cornell.edu
+

@@ -1,0 +1,88 @@
+	.title	tobackup
+;!> TOBACKUP.MAR -- Copy from any file to a BACKUP save set format file
+;!-> Who: tkb When: 050287 Why: PRAXIS.BCK was in wrong format.
+; This program copies the input file to the output file, 
+; using block i/o, and writing the output to the sort of 
+; file BACKUP likes save sets to be.  It was used to 
+; make the PRAXIS.BCK from the DECUS tape (85? 84?) readable
+; as a save set. It was adapted from an example in the
+; RMS manual.  
+;
+; Use:
+; 	$ Define infile 	<input_file_spec>
+;	$ Define outfile	<output_file_spec>
+;	$ run tobackup
+;
+	.psect	data, wrt, noexe
+infab:	$fab	fnm = <infile:>, -	; input file name
+		fac = <bio,get>		; block i/o read operations
+inrab:	$rab	fab = infab, -		; pointer to fab
+		bkt = 0, -		; Start with current block
+                ubf = rec_buff, -	; Record buffer
+                usz = rec_size		;   and size
+outfab:	$fab	fnm = <outfile:>, -	; output file name
+		fop = cbt,-		; try for contiguous file
+		rfm = <fix>,-		; 
+                mrs = rec_size,-	; maximum record size
+                fac = <bio,put>		; block i/o write operations
+outrab:	$rab	fab = outfab,-		; pointer to FAB
+		bkt = 0,-		; start with current block
+                rbf = rec_buff		; output uses same buffer as input
+rec_size	= 32256			; maximum rec size (size backup likes)
+rec_buff:
+	.blkb	rec_size		; record buffer
+        
+        .psect	code, nowrt, exe
+; 
+; Initialization -- Open input and output files and connect streams
+;
+	.entry	blockio, ^m<>		; no registers to save
+        $open	fab=infab		; open input file
+        blbc	r0, exit1		; quit on error
+        $connect rab=inrab		; connect to input
+        blbc	r0, exit2		; quit on error
+        movl	infab+fab$l_alq,-	; set proper size
+        	outfab+fab$l_alq	;   for output
+        $create	fab=outfab		; create output file
+        blbc	r0, exit3		; quit on error
+        $connect rab=outrab		; connect to output
+        blbc	r0, exit4		; quit on error
+;
+; Copy loop
+;
+read:	$read	rab=inrab		; get a block
+	blbs	r0, write		; write the block
+        cmpl	r0, #rms$_eof		; was error end-of-file?
+        beql	done			; Sucessful completion
+        brb	exit2			; if not, signal error
+write:	movw	inrab+rab$w_rsz, -	; set the record size 
+		outrab+rab$w_rsz	;   for output
+	$write	rab=outrab		; Write the block
+        blbc	r0, exit4		; quit on error
+        brb	read			; go back for more
+;
+; error signaling
+;
+exit1:	movl	infab+fab$l_sts, r2	; move sts into r2
+	movl	infab+fab$l_stv, r3	; move stv into r3
+        brb	exit			; signal error
+exit2:	movl	inrab+rab$l_sts, r2	; move sts into r2
+	movl	inrab+rab$l_stv, r3	; move stv into r3
+        brb	exit			; signal error
+exit3:	movl	outfab+fab$l_sts, r2	; move sts into r2
+	movl	outfab+fab$l_stv, r3	; move stv into r3
+        brb	exit			; signal error
+exit4: 	movl	outrab+rab$l_sts, r2	; move sts into r2
+	movl	outrab+rab$l_stv, r3	; move stv into r3
+        brb	exit			; signal error
+;
+; close files and exit
+;
+done:	$close	fab=infab		; close input and
+	$close	fab=outfab		;   output files
+        ret				; return w/success in r0
+exit:	pushl	r3			; push stv and sts
+	pushl	r2			;   on stack
+        calls	#2, g^lib$signal	; signal error
+        ret
+        .end	blockio

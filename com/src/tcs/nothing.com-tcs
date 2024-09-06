@@ -1,0 +1,29 @@
+%%s 5/0/13
+%%d D 1.2 21-Aug-24 11:46:04 tkb 2 1
+%%c Add a banner so it's easier to the output.
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:29 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$!> NOTHING.COM -- Do nothing useful.
+%%I 2
+$       write sys$output ""
+$       write sys$output "==============================================================================="
+$       write sys$output "Wecome to nothing!"
+$       write sys$output "==============================================================================="
+$       write sys$output ""
+%%E 2
+$       proc = f$environment ("PROCEDURE")
+$       write sys$output "Command Procedure: ", proc
+$       write sys$output "Time: ", f$cvtime ()
+$       write sys$output "Default Directory: "
+$       show default
+$       i = 0
+$ 10$:
+$       i = i + 1
+$       if p'i' .eqs. "" then goto 19$
+$       write sys$output "p",i, ": """, p'i', """"
+$       goto 10$
+$ 19$:
+%%E 1

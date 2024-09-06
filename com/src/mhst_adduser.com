@@ -1,0 +1,27 @@
+$!> MHST_ADDUSER.COM -- Add an MHST user.  BROKEN!!!!
+$!
+$       uniqifier = f$getjpi ("", "PID")
+$       tmpfilename = "sys$scratch:mhst_adduser_tmp" + uniqifier + ".sub"
+$
+$       ask := read sys$command
+$       ask name /prompt="Name? "
+$       ask newusername /prompt="New Username? "
+$       ask uic_part2 /prompt="Second part of UIC? "
+$       uic = "[150," + uic_part2 + "]"
+$       ask donor /prompt="Donor for clone? "
+$       write sys$output name, " ", newusername, " ", uic, " ", donor
+$       open/write outfile 'tmpfilename'
+$       write outfile "$ olddir = f$parse("""",,,""device"") + f$directory()"
+$       write outfile "$ set def sys$system"
+$       write outfile "$ run sys$system:authorize"
+$       write outfile "copy ''donor' ''newusername'/uic=''uic'/pass=newpass/pwdexp-"
+$       write outfile "    /dir=[mines.personal.''newusername']/own=""''name'"""
+$       write outfile "grant/id wchr_nodisc ''newusername'"
+$       write outfile "$ exit"
+$! Can you create directories before diskquota is established and not have
+$! rights be all wrong?
+$!       write outfile "$ create/dir personal$data:[mines.personal.''newusername']"
+$!       write outfile "$ set def 'olddir'"
+$       close outfile
+$       @'tmpfilename'
+$!       delete/nolog 'tmpfilename';0

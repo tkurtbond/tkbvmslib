@@ -1,0 +1,8 @@
+%%s 0/0/0
+%%d D 1.1 22-Aug-24 14:32:50 tkb 1 0
+%%c 000TODO.ORG is for listing things that need to be done.
+%%T
+%%I 1
+* DATEDIFF.BAS
+** TODO Use CLD to get the minuend and subtrahend parameters?
+%%E 1

@@ -1,0 +1,321 @@
+# mxrejsum.icn -- summarize rejection/trapping of spam from smtp_server_X.log
+
+link options
+global version
+global months
+global pad_char, debug, list_level, additional_info, interval, verbose
+global exit_dcl_badparam
+
+procedure match_date ()
+  return tab(many(&digits)) || ="-" ||
+	  =!months || ="-" || tab(many(&digits))
+end # match_date
+
+procedure lpos(s, l)
+  every i := 1 to *l do
+    if s == l[i] then return i
+  fail
+end #lpos 
+
+procedure match_date1 ()
+  local d, m, y
+  if (d := right (tab(many(&digits)), 2, "0")) & ="-" &
+     (m := right (string(lpos(=!months, months)), 2, "0")) &  ="-" &
+     (y := right (tab(many(&digits)), 4, "0"))
+  then
+    return y || "-" || m || "-" || d
+  else
+    return &null
+end # match_date1
+
+procedure revlist2 (l)
+  local nl, a, b
+  nl := []
+  while (a := get (l) & b := get (l) & push (nl, b) & push (nl, a))
+  return nl
+end
+
+record statistics(trap, reject, relay, dtot, dtrap, dreject, drelay,
+		  frombox, tobox, ip, dates, bl)
+procedure new_statistics ()
+  return statistics (0,			# trap
+		     0,			# reject
+		     0,			# relay
+		     table(0),		# dtot
+		     table(0),		# dtrap
+		     table(0),		# dreject
+		     table(0),		# drelay
+		     table(0),		# frombox
+		     table(0),          # tobox
+		     table(0),		# ip
+		     table(0),		# dates
+		     table(0))		# bl (black lists)
+end
+
+procedure process_file(stats, file)
+  local date, s, lineno, ipset, hostset
+  ipset := &digits ++ '.'
+  hostset := &letters ++ &digits ++ '._-'
+  lineno := 0
+  while line := read (file) do {
+    lineno +:= 1
+    if \verbose then {
+      if (lineno % \interval) = 0 then 
+	writes (&errout, ".")
+      if (lineno % (\interval * 78)) = 0 then write (&errout)
+    }
+    if \debug then write (&errout, lineno, ": ", line)
+    line ? {
+      tab(many (' '))
+      date := match_date1()
+    }
+    if /date then {
+      if \debug then write (&errout, "Skipped: ", lineno)
+      next
+    }
+
+    stats.dates[date] +:= 1
+    if find ("trapped", line) then {
+      stats.trap +:= 1
+      stats.dtrap[date] +:= 1
+    } else if find ("due to disabled relay", line) then {
+      stats.relay +:= 1
+      stats.drelay[date] +:= 1
+    } else if find ("rejected", line) then {
+      stats.reject +:= 1
+      stats.dreject[date] +:= 1
+    } else
+	next
+    stats.dtot[date] +:= 1
+
+    s := &null
+    line ? {
+      tab(find("from <") + 6) & s := tab(many(~'>') | match("")) & =">"
+    }
+    if \s then stats.frombox[s] +:= 1
+
+    s := &null
+    line ? {
+      tab(find("to <") + 4) & s := tab(many(~'>') | match("")) & =">"
+    }
+    if \s then stats.tobox[s] +:= 1
+
+    s := &null
+    line ? {
+      tab(find("[") + 1) & s := tab(many(ipset)) & ="]"
+    }
+    if \s then stats.ip[s] +:= 1
+
+    s := &null
+    line ? {
+      tab(find("(on list ") + 9) & s := tab(many(hostset)) & =")"
+    }
+    if \s then stats.bl[s] +:= 1
+  }
+  if \verbose then write (&errout)
+end # process_file
+
+procedure pad_ip (t, pad)
+  local k, v, p1, p2, p3, p4
+  nt := table ()
+  every k := key(t) do {
+    k ? {
+      p1 := tab(many(&digits)) & ="." & p2 := tab(many(&digits)) & ="." &
+	p3 := tab(many(&digits)) & ="." & p4 := tab(many(&digits))
+    }
+    nk := (right (p1,3,pad) || "." || right (p2,3,pad) || "." ||
+	   right (p3,3,pad) || "." || right (p4,3,pad))
+    nt[nk] := t[k]
+  }
+  return nt
+end # pad_ip
+
+procedure write_statistics (stats, out)
+  local
+    dlist,				# double-ended list for sorting lists
+    i,					# index
+    n,					# number of
+    beg_date,				# beginning date
+    end_date,				# ending date
+    ws					# white space
+  ws := "        "
+  dlist := []
+  every (push (dlist, key(stats.dates)))
+  dlist := sort (dlist)
+  beg_date := dlist[1]
+  end_date := dlist[-1]
+  write (out)
+  if /beg_date & /end_date then
+    write (out, "(No dates covered)")
+  else
+    {
+      if beg_date ~== end_date then
+	write (out, "From ", beg_date, " To ", end_date)
+      else
+	write (out, "For ", beg_date)
+    }
+  write (out, repl ("=", 78))
+  write (out)
+  write (out, "Total SPAM avoided: ", stats.trap + stats.reject + stats.relay)
+  write (out, "    Blacklists rejected:     ", stats.reject)
+  write (out, "    Disabled relay rejected: ", stats.relay)
+  write (out, "    Heuristics trapped:      ", stats.trap)
+
+  write (out)
+  dlist := sort (stats.dtot, 3)
+  write (out, "Total SPAM avoided by date:")
+  while write (out, ws, get(dlist), ": ", get(dlist))
+
+  if *stats.dreject > 0 then {
+    dlist := sort (stats.dreject, 3)
+    write (out)
+    write (out, "    Blacklists rejected by date:")
+    while write (out, ws, get(dlist), ": ", get(dlist))
+  }
+
+  if *stats.drelay > 0 then {
+    dlist := sort (stats.drelay, 3)
+    write (out)
+    write (out, "    Disabled relay rejected by date:")
+    while write (out, ws, get(dlist), ": ", get(dlist))
+  }
+
+  if *stats.dtrap > 0 then {
+    dlist := sort (stats.dtrap, 3)
+    write (out)
+    write (out, "    Heuristics trapped by date:")
+    while write (out, ws, get(dlist), ": ", get(dlist))
+  }
+
+  if /additional_info then return
+
+  write (out)
+  if *stats.frombox > 0 then {
+    dlist := sort (stats.frombox, 4)
+    dlist := revlist2 (dlist)
+    if \list_level & (*stats.frombox > list_level) then 
+      writes (out, "Top " || string(list_level) || " ")
+    write (out, "Originating Mailboxes:", )
+    i := 0
+    while ((\list_level & i < list_level) | /list_level) & (i +:= 1) &
+      write (out, ws, get(dlist), ": ", get(dlist))
+  }
+
+  write (out)
+  dlist := sort (stats.tobox, 4)
+  dlist := revlist2 (dlist)
+  if \list_level & (*stats.tobox > list_level) then
+    writes (out, "Top " || string(list_level) || " ")
+  write (out, "Receiving Mailboxes:", )
+  i := 0
+  while ((\list_level & i < list_level) | /list_level) & (i +:= 1) &
+    write (out, ws, get(dlist), ": ", get(dlist))
+
+  write (out)
+  if \pad_char then {
+    nstats_ip := pad_ip (stats.ip, pad_char)
+  } else {
+    nstats_ip := stats.ip
+  }
+  dlist := sort (nstats_ip, 4)
+  dlist := revlist2 (dlist)
+  if \list_level & (*nstats_ip > list_level) then
+    writes (out, "Top " || string(list_level) || " ")
+  write (out, "Originating IP Addresses:")
+  i := 0
+  while ((\list_level & i < list_level) | /list_level) & (i +:= 1) &
+    write (out, ws, left(get(dlist) || ":", 20), get(dlist))
+
+  write (out)
+  dlist := sort (stats.bl, 4)
+  dlist := revlist2 (dlist)
+  if \list_level & (*stats.bl > list_level) then
+    writes (out, "Top " || string(list_level) || " ")
+  write (out, "Blacklists with hits:")
+  i := 0
+  while ((\list_level & i < list_level) | /list_level) & (i +:= 1) &
+    write (out, ws, left(get(dlist) || ":", 20), get(dlist))
+end # write_statistics
+
+procedure usage (msg)
+  local e
+  e := &errout
+  write (e, msg)
+  write (e)
+  write (e, "usage: mxjregsum [options] mxsmtpserver.log")
+  write (e, "-b          Pad ip addresses with blanks (default)")
+  write (e, "-d          Debug mode")
+  write (e, "-n level    List top 'level' items in itemized lists")
+  write (e, "-o outfile  Output file")
+  write (e, "-t          Trim ip addresses (i.e., do not pad)")
+  write (e, "-v          Output additional info: print lists of mailboxes, _
+ip addresses,")
+  write (e, "            and blacklists with hits")
+  write (e, "-z          Pad ip addresses with zeros")
+  write (e)
+  exit (exit_dcl_badparam)  
+end # usage 
+
+procedure main (arg)
+  local line, s, date, trapped, rejected, date_trapped, date_rejected,
+    date_total
+
+  initial {
+    version := "1.1"
+    exit_dcl_badparam := 16r00030010
+
+    months := ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+	       "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    additional_info := &null
+    pad_char := " "
+    debug := &null
+    interval := &null
+    list_level := &null
+    out := &output
+    verbose := &null
+  }
+
+  opts := options (arg, "abdi+n+o:tv -version z", usage)
+  if \opts["a"] then additional_info := 1
+  if \opts["b"] then pad_char := " "
+  if \opts["d"] then debug := 1
+  if \opts["i"] then interval := opts["i"]
+  if \opts["n"] then list_level := opts["n"]
+  if \opts["o"] then {
+    out := open (opts["o"], "w") | {
+      write (&errout, "mxrejsum: unable to open output file: ", opts["o"])
+      stop ()
+    }
+  }
+  if \opts["t"] then pad_char := &null
+  if \opts["v"] then verbose := 1
+  if \opts["version"] then {
+    write ("mxrejsum version ", version)
+    exit ()
+  }
+  if \opts["z"] then pad_char := "0"
+
+  statistics := new_statistics ()
+
+  write (out, "Anti-SPAM report on ", &date, " ", &clock)
+
+  if *arg = 0 then {
+    if \verbose then write (&errout, "Processing standard input")
+    process_file (statistics, &input)
+  }
+  else {
+    while filename := get(arg) do
+      {
+	file := open (filename, "r") | {
+	  write (&errout, "mxrejsum: unable to open input file: ", filename)
+	  stop ()
+	}
+	if \verbose then write (&errout, "Processing ", filename)
+	process_file (statistics, file)
+	close (file)
+      }
+  }
+
+  write_statistics (statistics, out)
+  if \opts["o"] then close (out)
+end 

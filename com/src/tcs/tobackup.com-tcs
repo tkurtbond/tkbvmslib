@@ -1,0 +1,10 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:32 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$!> TOBACKUP.com -- p1 = in, p2 = out
+$ define infile 'p1
+$ define outfile 'p2
+$ run exe_lib:tobackup
+%%E 1

@@ -1,0 +1,7 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:50 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ write sys$output f$env ("PROCEDURE")
+%%E 1

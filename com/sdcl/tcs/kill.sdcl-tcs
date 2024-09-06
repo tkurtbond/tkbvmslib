@@ -1,0 +1,92 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:27:29 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+###############################################################################
+#                      
+# Program:        K I L L . S D C L
+# Written By:     Thomas Kurt Bond
+#
+# Description:	
+#      This command procedure allows the user to delete multiple
+# files with the same ending.  It also checks to see if the files
+# being deleted are on the protected list.  If so the user is
+# prompted to make sure that he/she really wants to delete these 
+# files.  Files without an ending may be specified by a ".".
+# The file specification may be a comma or plus-sign concatenated
+# list, such as "obj,exe,lis" or "obj+lis+map". 
+#
+# History:
+# Ver     When    Who  What
+# 1.00a   ????82  CPB  Initial version.
+# 2.00b   069186  cpb  Removed from COMM.COM
+# 3.00a   032087  tkb  Rewrite in sdcl, allow list of extensions to delete.
+# 3.00b   041987  tkb  Turn off verify at beginning, turn on again at end.
+# 3.50a   070688  tkb  Modified to only issue one delete command
+# 4.0     052289  tkb  Change to new SDCL syntax and add verify handling.
+###############################################################################
+   ##turn off verify before user sees anything
+   verifying = 'f$verify(f$type(kill_verify) .nes. "")'
+   !> KILL.SDCL -- Removes all files with the same ending
+   ##Set up global constants and abrieviations
+   wso   = "write sys$output"
+   wse   = "write sys$error"
+   inq   = "inquire/nopun"
+   true  = (1 .eq. 1)
+   false = .not. true
+   testing = false
+      
+   bad_ext = "\\*\ada\bas\c\cld\cob\com\dsc\dta\for\h\icn\mar\pas\rno\sdcl\tex\"
+   bad_ext_len = f$length(bad_ext)
+   ##concatentate all possible parameters into one string
+   list = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8
+   if (list .eqs. "") {
+      inq list "List of file extensions to delete: "
+      if (list .eqs. "") goto The_End
+   }
+
+   ##add a leading "," for f$element()
+   list = "," + f$edit(list, "lowercase,collapse") 
+
+   ##Get rid of all the plus signs, replace with comma so f$element() works
+   p = f$locate("+", list)		#find location of plus sign in list
+   length = f$length(list)      
+   while (p .ne. length) {		#plus sign in list
+      list[p * 8, 8] = 44		#overlay "+" with "," (ascii 44)
+      p = f$locate("+", list)		#find next plus sign
+   }
+
+   n = 1				#start with first element
+   element = f$element(n, ",", list)
+   delete_list = ""
+   ##while elements exist (f$element() returns delimeter after end of list)
+   while (element .nes. ",") {
+      if (element .eqs. ".") element = "" #so can specify null extension
+
+      ##is this element in the list of protected extensions?
+      if (f$locate("\" + element + "\", bad_ext) .ne. bad_ext_len) {
+         inq sure "Are you sure you want to delete *.''element';* <n>: "
+         if (sure .eqs. "") sure = "n"
+         if (sure) delete_list = delete_list + ", *." + element + ";*"
+      } else
+         delete_list = delete_list + ", *." + element + ";*"
+
+      n = n + 1				#get the next element
+      element = f$element(n, ",", list)
+   }
+   delete_list = f$extract(1, f$length(delete_list), delete_list)
+   if (testing) {
+      wse "Delete_List: ", delete_list
+   } else {
+      if (f$edit(delete_list, "collapse") .eqs. "") {
+         wse "kill: nothing to delete"
+      } else {
+         delete /log 'delete_list'
+      }
+   }
+
+The_End:
+   ##Turn the verify on after executing line, so user sees nothing.
+   exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 1

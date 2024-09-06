@@ -1,0 +1,70 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:25 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+define key control @ 		as "tgsel."
+define key control a 		as "bl."
+define key control b 		as "-c."
+define key control d 		as "+dc."
+define key control e 		as "el."
+define key control f 		as "+c."
+define key control g		as "ti."
+define key control h		as "td."
+define key control j            as "^MC-CTAB."
+define key control k 		as "+del."
+define key control l		as "ref."
+define key control n 		as "+v."
+define key control p 		as "-v."
+define key control u 		as "paste."
+define key control v 		as "(+22v)."
+define key control w		as "cutsr."
+!
+define key gold del 		as "-dw."
+define key gold 12		as "(-22v)."
+define key gold 13		as "(+22v)."
+define key gold 14		as "(shl)."
+define key gold 15		as "(shr)."
+define key gold control @	as "paste."
+define key gold control h	as "(-c d-c c undc)."
+define key gold control w	as "ext write"
+define key gold control v	as "ext co select to=?'Copy to Buffer: ' ; f l."
+define key gold control z	as "ext ex."
+!
+define key gold . as "i~~/\~~^z -6c."
+define key gold / as "s%~~/\~~%%."
+define key gold < as "br."
+define key gold > as "er."
+define key gold # as "ext s~?' Old String: '~?' New String: '~rest/q."
+define key gold "%" as "ext s~?' Old String: '~?' New String: '~rest/q."
+define key gold a as "-bsen."
+define key gold b as "-w."
+define key gold d as "+dw."
+define key gold e as "+esen."
+define key gold f as "+w."
+define key gold i as "ext inc ?'Input File: ' =?' Buffer: '."
+define key gold l as "ext f l."
+define key gold m as "ext f=main.."
+define key gold n as "sn."
+define key gold q as "ext quit/save."
+define key gold r as "(s~?' Old String: '~?'  New string: '~)."
+define key gold s as "ext sh bu."
+define key gold u as "paste."
+define key gold v as "(-22v)."
+define key gold z as "ext ex."
+!
+!define key gold o as "ext wr ?'Output File: ' =?' Buffer: '."
+!+
+!	Set Terminal Characteristics
+!-
+!set wrap 72
+set nowrap
+!set tab 4
+set tr
+set k
+set m c
+!+
+!	Set Buffer to MAIN, and Start
+!-
+f=main
+%%E 1

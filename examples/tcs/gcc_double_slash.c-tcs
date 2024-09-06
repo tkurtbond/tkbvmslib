@@ -1,0 +1,15 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:51 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+#include <stdio.h>
+#include <stdlib.h>
+
+int
+main (int argc, char **argv)
+{
+  // This is a comment.
+    printf ("after comment");
+}
+%%E 1

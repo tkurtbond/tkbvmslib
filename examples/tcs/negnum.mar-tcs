@@ -1,0 +1,34 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:51 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+	.title	negnum
+	.ident	/v0.1/
+	.dsabl	global
+
+	.psect	negnum_data,quad,noexe
+before_a:
+        .long	0
+v_a:
+	.long   -2147483648
+after_a:
+        .long   0
+        .blkb   1024
+before_b:
+        .long	0
+v_b:
+        .long   0
+after_b:
+        .long   0
+        
+	.psect	negnum_code,exe,nowrt
+
+	.entry	negnum,^m<>
+        moval   v_a,r11
+        moval   after_b,r10
+        movl    (r11),-(r10)
+the_end:
+	ret
+	.end	negnum
+%%E 1

@@ -1,0 +1,26 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:32 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$!	A subprocedure for the ROU application
+$
+$	on control_y then exit rou__ctrly
+$	on warning then exit $status .or. %x10000000
+$
+$!	Initialization
+$
+$!	Body of subprocedure
+$
+$	exit rou__success
+$
+$! Module:	What This Module Does
+$!
+$! Synopsis:	A multi-line description of what this function does.
+$!
+$! Format:	VERB keyword,...
+$!
+$! Parameters:	keyword:	What the keyword means.
+$!
+$! Notes:
+%%E 1

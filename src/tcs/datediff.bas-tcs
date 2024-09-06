@@ -1,0 +1,157 @@
+%%s 1/1/87
+%%d D 1.3 22-Aug-24 15:22:26 tkb 3 2
+%%c Got rid of a variable that isn't needed any more.
+%%s 35/35/53
+%%d D 1.2 22-Aug-24 15:15:07 tkb 2 1
+%%c Use CLI$DCL_PARSE to parse the command line because DCL understands all the
+%%c niceties of parsing VMS datetimes.
+%%s 0/0/0
+%%d D 1.1 22-Aug-24 13:14:59 tkb 1 0
+%%c DATEDIFF.BAS is a program to find the difference of two VMS absolute times.
+%%T
+%%I 1
+%%I 2
+!------------------------------------------------------------------------------
+!> DATEDIFF.BAS -- Find the difference of two VMS absolute datetimes.
+!------------------------------------------------------------------------------
+%%E 2
+program datediff
+    option type = explicit, constant type = integer, &
+        size = integer long, size = real double
+
+    %include "starlet"         %from %library "sys$library:basic$starlet"
+    %include "$syidef"         %from %library "sys$library:basic$starlet"
+    %include "$ssdef"          %from %library "sys$library:basic$starlet"
+    %include "lib$routines"    %from %library "sys$library:basic$starlet"
+
+%%I 2
+    external long function                                                    &
+        cli$present(string),                                                  &
+        cli$get_value(string, string),                                        &
+        cli$dcl_parse
+
+    external long constant datediff_cli
+
+
+%%E 2
+    ! "dd-mmm-yyyy hh:mm:ss.cc" 23 characters
+    ! "dddd hh:mm:ss.cc" 16 characters
+    map (dt) &
+        string minuend$ = 23, &
+        string subtrahend$ = 23, &
+        string difference$ = 16
+
+%%D 2
+    ! datediff 22-AUG-2024:12:10:11.36 21-AUG-2024:12:01:30.02
+%%E 2
+%%I 2
+    !+++
+    ! If not enclosed in double quotes, use a colon between the date
+    ! and the time:
+    !     datediff 22-AUG-2024:12:10:11.36 21-AUG-2024:12:01:30.02
+    !
+    ! The space between the date and time is fine if the datetime is
+    ! enclosed in double quotes:
+    !     datediff "22-AUG-2024 12:10:11.36" "21-AUG-2024 12:01:30.02"
+    !
+    ! And you can use any VMS datetime specification:
+    !    datediff today "today-1-" 
+    !---
+%%E 2
+%%D 3
+    declare long result, space_pos
+%%E 3
+%%I 3
+    declare long result
+%%E 3
+    declare basic$quadword minuend, subtrahend, difference
+    declare string command_line
+
+    call lib$get_foreign (command_line)
+%%D 2
+    command_line = edit$ (command_line, 8+16+128)
+    if command_line = "" then
+        print "datediff: usage: datediff 22-AUG-2024:12:10:11.36 21-AUG-2024:08:01:30.02"
+        print 'datediff: Do not understand "'; command_line; '"'
+        exit program SS$_BADPARAM
+    end if 
+    space_pos = pos (command_line, " ", 1)
+    minuend$ = left$ (command_line, space_pos - 1)
+%%E 2
+%%I 2
+    result = cli$dcl_parse ("DATEDIFF " + command_line,                       &
+                            datediff_cli by value,                            &
+                            loc (lib$get_input) by value, &
+                            loc (lib$get_input) by value, &
+                            "DATEDIFF> ")
+    if (result and 1) = 0 then
+        exit program result
+    end if
+
+    call cli$get_value ("MINUEND", minuend$)
+    call cli$get_value ("SUBTRAHEND", subtrahend$)
+    
+%%E 2
+    mid$ (minuend$, 12, 1) = " " if mid$ (minuend$, 12, 1) = ":"
+%%D 2
+    subtrahend$ = right$ (command_line, space_pos + 1)
+%%E 2
+    mid$ (subtrahend$, 12, 1) = " " if mid$ (subtrahend$, 12, 1) = ":"
+
+    result = sys$bintim (minuend$, minuend)
+    if (result and 1) = 0 then
+        print 'datediff: unrecognized date minuend: "'; edit$ (minuend$, 8+128); '"'
+        exit program SS$_BADPARAM
+    end if  
+
+    result = sys$bintim (subtrahend$, subtrahend)
+    if (result and 1) = 0 then
+        print 'datediff: unrecognized date subtrahend: "'; edit$ (subtrahend$, 8+128); '"'
+        exit program SS$_BADPARAM
+    end if  
+
+    result = lib$sub_times (minuend, subtrahend, difference)
+    if (result and 1) = 0 then
+        print "datediff: unable to subtract times!"
+        exit program result
+    end if 
+    
+    result = sys$asctim (, difference$, difference, )
+    if (result and 1) = 0 then
+        print "datediff: unable to convert difference to text!"
+        exit program result
+    end if 
+
+    print minuend$; " - "; subtrahend$; " = "; edit$(difference$, 8+128)
+
+    exit program
+
+%%D 2
+%if 0 %then
+    print "get current time from sys$asctim: "
+    result = sys$asctim (datetime_len, datetime)
+    print "result: "; result; " datetime: "; datetime; " datetime_len: "; datetime_len
+
+    quadword::q1 = 0 \ quadword::q2 = 0
+    print "get sys$bintim from 14-AUG-2024 15:45:50.58"
+    datetime = "14-AUG-2024 15:45:50.58"
+    result = sys$bintim (datetime, quadword)
+    print "result: "; result; " q1: "; quadword::q1; " q2: "; quadword::q2
+
+    print "get sys$asctim from sys$bintim result"
+    result = sys$asctim (datetime_len, datetime, quadword, 0)
+    print "result: "; result; " datetime: "; datetime; " datetime_len: "; datetime_len
+
+    print "get sys$bintim from 10:20:30"
+    datetime = "10:20:30"
+    result = sys$bintim (datetime, quadword)
+    print "result: "; result; " q1: "; quadword::q1; " q2: "; quadword::q2
+
+    deltatime = ""
+    print "get sys$asctim from sys$bintim result"
+    result = sys$asctim (deltatime_len, deltatime, quadword, 1)
+    print "result: "; result; " deltatime: "; deltatime; " datetime_len: "; deltatime_len
+%end %if
+%%E 2
+end program ! datediff
+%%E 1

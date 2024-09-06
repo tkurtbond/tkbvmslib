@@ -1,0 +1,11 @@
+%%s 0/0/0
+%%d D 1.1 21-Aug-24 13:40:47 tkb 1 0
+%%c Print the time in something like natural speech.
+%%T
+%%I 1
+# trysaytime.icn - Print the time in something like natural speech.
+link saytime
+procedure main ()
+  write (saytime ())
+end # main
+%%E 1

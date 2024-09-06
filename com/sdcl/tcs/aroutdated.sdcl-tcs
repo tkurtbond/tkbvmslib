@@ -1,0 +1,164 @@
+%%s 1/1/108
+%%d D 1.3 26-Aug-24 10:20:31 tkb 3 2
+%%c Make an error exit actually exit with an error.
+%%s 50/16/59
+%%d D 1.2 26-Aug-24 10:09:08 tkb 2 1
+%%c Add the -SETRDT (set revision date) option, so you can set the file's
+%%c revision date to that of the archive, if they get out of sync some way.
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 17:31:58 tkb 1 0
+%%c Initial checkin.
+%%c Find if sources of SWTOOLS archive entries are newer.
+%%T
+%%I 1
+!> AROUTDATED.SDCL -- Find if sources of SWTOOLS archive entries are newer.
+    TRUE = 1 .eq. 1
+    FALSE = 1 .ne. 1
+    wso := write sys$output
+    wse := write sys$output
+
+    debugging = f$type (aroutdated_debugging) .nes. ""
+
+    months_jan = "01"
+    months_feb = "02"
+    months_mar = "03"
+    months_apr = "04"
+    months_may = "05"
+    months_jun = "06"
+    months_jul = "07"
+    months_aug = "08"
+    months_sep = "09"
+    months_oct = "10"
+    months_nov = "11"
+    months_dec = "12"
+
+%%D 2
+    arfile = p1
+%%E 2
+%%I 2
+    set_rdt = FALSE
+
+    param_idx = 1
+    while (f$extract (0, 1, p'param_idx') .eqs. "-") {
+        opt = p'param_idx'
+        opt_len = f$length (opt)
+
+        if (opt .eqs. "-SETRDT") {
+            set_rdt = TRUE
+            if (f$type (file) .eqs. "") {
+                wse "aroutdated: FILE is not defined; you need a symbol for the FILE program."
+                exit 2
+            }
+        } else {
+            wse "aroutdated: unknown option: ", opt
+%%D 3
+            exit 
+%%E 3
+%%I 3
+            exit 2
+%%E 3
+        }
+        param_idx = param_idx + 1
+    }
+
+    arfile = p'param_idx'
+%%E 2
+    if (arfile .eqs. "") {
+        wse "aroutdated: You must specify an archive file!"
+        exit 2
+    }
+    
+    pid = f$getjpi ("", "PID")
+    tmpfile = "AROUTDATED-" + pid + ".TMP"
+
+    ar tv 'arfile' >'tmpfile'
+    open/read inf 'tmpfile'
+
+    n = 0
+    repeat {
+        read /end_of_file=end_read_loop inf line
+        n = n + 1
+        line = f$edit (line, "COMPRESS")
+        if (debugging) wse n, ": """, line, """"
+%%D 2
+        filename = f$element (0, " ", line)
+        date = f$element (3, " ", line)
+        time = f$element (4, " ", line)
+        day = f$extract (0, 2, date)
+        monnam = f$extract (3, 3, date)
+        monnum = months_'monnam'
+        year = f$extract (7, 2, date)
+        entry_cmpdate = "20" + year + "-" + monnum + "-" + day + " " + time + ".00"
+%%E 2
+%%I 2
+        entry_name    = f$element (0, " ", line)
+        entry_date    = f$element (3, " ", line)
+        entry_time    = f$element (4, " ", line)
+        entry_day     = f$extract (0, 2, entry_date)
+        entry_monname = f$extract (3, 3, entry_date)
+        entry_monnum  = months_'entry_monname'
+        entry_year    = f$extract (7, 2, entry_date)
+        entry_cmpdate = "20" + entry_year + "-" + entry_monnum + "-" + entry_day + " " + entry_time + ".00"
+%%E 2
+        if (debugging) {
+%%D 2
+            wse "year: ", year, " monnam: ", monnam, " day: ", day
+%%E 2
+%%I 2
+            wse "entry_year: ", entry_year, " entry_monname: ", entry_monname, " entry_day: ", entry_day
+%%E 2
+            wse "entry_cmpdate: ", entry_cmpdate
+        }
+
+%%D 2
+        srcrdt = f$file_attibutes (filename, "RDT")
+        src_day     = f$extract (00, 02, srcrdt)
+        src_monname = f$extract (03, 03, srcrdt)
+        src_year    = f$extract (07, 04, srcrdt)
+        src_rest    = f$extract (11, 12, srcrdt)
+%%E 2
+%%I 2
+        src_rdt = f$file_attibutes (entry_name, "RDT")
+        src_day     = f$extract (00, 02, src_rdt)
+        src_monname = f$extract (03, 03, src_rdt)
+        src_year    = f$extract (07, 04, src_rdt)
+        src_rest    = f$extract (11, 12, src_rdt)
+%%E 2
+        src_monnum  = months_'src_monname'
+        src_cmpdate = src_year + "-" + src_monnum + "-" + f$fao ("!2ZL", f$integer (src_day)) + src_rest
+        if (debugging) wse "src_cmpdate: ", src_cmpdate
+%%D 2
+        if (src_cmpdate .gts. entry_cmpdate) wso filename, " is newer than ", arfile, "(", filename, ")"
+%%E 2
+%%I 2
+        if (src_cmpdate .gts. entry_cmpdate) {
+            wso entry_name, " is newer than ", arfile, "(", entry_name, ")"
+            wso "    ", src_cmpdate, " > ", entry_cmpdate
+
+            if (set_rdt) {
+                inquire/nopun doit "Set date? "
+                doit = f$extract (0, 1, f$edit (doit, "COLLAPSE,UPCASE"))
+                if (doit .eqs. "Q") goto end_read_loop
+                if (doit .eqs. "Y") {
+                    vms_date = entry_day + "-" + entry_monname + "-" + "20" + entry_year + " " + entry_time + ".00"
+                    wso vms_date, ": ", vms_date
+                    file /revision_date="''vms_date'" 'entry_name'
+                }
+            }
+        }
+%%E 2
+    }
+    
+end_read_loop:
+    close inf
+    delete 'tmpfile';0
+    exit
+
+error:
+    if (f$trnlm ("INF") .nes. "") {
+        close inf
+        delete 'tmpfile';0
+    }
+    exit 2
+   
+%%E 1

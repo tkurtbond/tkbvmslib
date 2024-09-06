@@ -1,0 +1,207 @@
+procedure eve$dynamic_module_ident
+return '900627.095737';
+endprocedure
+
+procedure eve$parser_dispatch(the_command)
+
+    eve$process_command(the_command);
+
+endprocedure
+
+procedure eve$$pre_init_modules
+
+
+endprocedure
+
+procedure eve$$init_modules
+
+    eve$options_module_init;
+    eve$constants_module_init;
+    eve$decwindows_module_init;
+    eve$mouse_module_init;
+    eve$terminals_module_init;
+    eve$windows_module_init;
+    eve$file_module_init;
+    eve$format_module_init;
+    eve$edit_module_init;
+    eve$advanced_module_init;
+    eve$help_module_init;
+    eve$edt_module_init;
+    eve$extras_module_init;
+    eve$wps_module_init;
+    eve$show_module_init;
+    eve$wildcard_module_init;
+    eve$synonyms_module_init;
+    eve$menus_module_init;
+    tkb_module_init;
+    tkb_match_module_init;
+
+endprocedure
+
+procedure eve$get_status_fields (the_length, the_format)
+
+local	remaining,
+	the_fields,
+	the_field;
+
+the_fields := "";
+remaining := the_length;
+
+the_field := eve$nowrite_status_field (remaining, the_format);
+if length (the_field) <= remaining
+then
+    the_fields := the_field + the_fields;
+    remaining := remaining - length (the_field);
+endif;
+
+
+return the_fields
+
+endprocedure
+
+procedure eve$$init_all_synonyms
+
+evex$file_synonym_init;
+eve$format_synonym_init;
+eve$synonyms_synonym_init;
+
+endprocedure
+
+procedure eve$exit_dispatch
+
+    eve$exit;
+
+endprocedure
+
+procedure eve$quit_dispatch
+
+    eve$quit;
+
+endprocedure
+
+
+procedure eve$version
+    return 'TKB_EVE V01-000 1990-06-27 09:57';
+endprocedure
+
+procedure eve$$build_module_idents
+
+return ('EVE$BUILD_MODULE_IDENT ' +
+	'EVE$OPTIONS_MODULE_IDENT ' +
+	'EVE$CONSTANTS_MODULE_IDENT ' +
+	'EVE$DECWINDOWS_MODULE_IDENT ' +
+	'EVE$MOUSE_MODULE_IDENT ' +
+	'EVE$TERMINALS_MODULE_IDENT ' +
+	'EVE$WINDOWS_MODULE_IDENT ' +
+	'EVE$FILE_MODULE_IDENT ' +
+	'EVE$CORE_MODULE_IDENT ' +
+	'EVE$FORMAT_MODULE_IDENT ' +
+	'EVE$EXTEND_MODULE_IDENT ' +
+	'EVE$EDIT_MODULE_IDENT ' +
+	'EVE$ADVANCED_MODULE_IDENT ' +
+	'EVE$HELP_MODULE_IDENT ' +
+	'EVE$EDT_MODULE_IDENT ' +
+	'EVE$EXTRAS_MODULE_IDENT ' +
+	'EVE$WPS_MODULE_IDENT ' +
+	'EVE$SHOW_MODULE_IDENT ' +
+	'EVE$WILDCARD_MODULE_IDENT ' +
+	'EVE$SYNONYMS_MODULE_IDENT ' +
+	'EVE$MENUS_MODULE_IDENT ' +
+	'EVE$DYNAMIC_MODULE_IDENT ' +
+	'TKB_MODULE_IDENT ' +
+	'TKB_MATCH_MODULE_IDENT ' +
+	'EVE$DYNAMIC_MODULE_IDENT ' + 
+	'');
+
+endprocedure;
+
+procedure eve$$build_parser_flags
+
+return ('');
+
+endprocedure;
+
+procedure eve$$build_module_pre_inits
+
+return ('');
+
+endprocedure;
+
+procedure eve$$build_module_inits
+
+return ('EVE$OPTIONS_MODULE_INIT ' +
+	'EVE$CONSTANTS_MODULE_INIT ' +
+	'EVE$DECWINDOWS_MODULE_INIT ' +
+	'EVE$MOUSE_MODULE_INIT ' +
+	'EVE$TERMINALS_MODULE_INIT ' +
+	'EVE$WINDOWS_MODULE_INIT ' +
+	'EVE$FILE_MODULE_INIT ' +
+	'EVE$FORMAT_MODULE_INIT ' +
+	'EVE$EDIT_MODULE_INIT ' +
+	'EVE$ADVANCED_MODULE_INIT ' +
+	'EVE$HELP_MODULE_INIT ' +
+	'EVE$EDT_MODULE_INIT ' +
+	'EVE$EXTRAS_MODULE_INIT ' +
+	'EVE$WPS_MODULE_INIT ' +
+	'EVE$SHOW_MODULE_INIT ' +
+	'EVE$WILDCARD_MODULE_INIT ' +
+	'EVE$SYNONYMS_MODULE_INIT ' +
+	'EVE$MENUS_MODULE_INIT ' +
+	'TKB_MODULE_INIT ' +
+	'TKB_MATCH_MODULE_INIT ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_declare_synonyms
+
+return ('EVEX$FILE_DECLARE_SYNONYM ' +
+	'EVE$FORMAT_DECLARE_SYNONYM ' +
+	'EVE$SYNONYMS_DECLARE_SYNONYM ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_synonym_inits
+
+return ('EVEX$FILE_SYNONYM_INIT ' +
+	'EVE$FORMAT_SYNONYM_INIT ' +
+	'EVE$SYNONYMS_SYNONYM_INIT ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_status_fields
+
+return ('EVE$NOWRITE_STATUS_FIELD ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_exit_handlers
+
+return ('');
+
+endprocedure;
+
+procedure eve$$build_quit_handlers
+
+return ('');
+
+endprocedure;
+
+
+procedure eve$$restore_settings
+
+eve$$x_gold_keys := create_array ();
+eve$$x_do_key_array := create_array ();
+
+eve$$x_gold_keys {'EVE$EDT_KEYS'} := PF1;
+eve$$x_gold_keys {'keypad'} := 'EVE$EDT_KEYS';
+eve$$x_do_key_array {'EVE$EDT_KEYS'} := 'GOLD/KP7 ';
+eve$$x_do_key_array {'EVE$NUMERIC_KEYS'} := 'PF4 ';
+eve$$x_do_key_array {'EVE$STANDARD_KEYS'} := 'DO ';
+eve$$x_do_key_array {'EVE$VT100_KEYS'} := 'PF4 ';
+eve$$x_do_key_array {'EVE$WPS_KEYS'} := 'GOLD/[ ';
+endprocedure
+

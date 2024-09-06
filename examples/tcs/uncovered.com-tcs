@@ -1,0 +1,8 @@
+%%s 0/0/0
+%%d D 1.1 21-Aug-24 13:41:36 tkb 1 0
+%%c Use TCS UNCOVERED to list uncovered files, ignoring those specifc to this
+%%c directory.
+%%T
+%%I 1
+$ tcs uncovered -ignore=exe,lis,icx,obj,u1,u2,mem
+%%E 1

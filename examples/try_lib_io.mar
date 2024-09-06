@@ -1,0 +1,53 @@
+	.title	Try LIB$ IO
+	.ident	/v0.1/
+	.dsabl	global
+	.extrn	dsc$k_dtype_t, dsc$k_class_s
+	.extrn	lib$get_input, lib$put_output
+
+c_max_len = 512
+
+	.psect	try_lib_iodata,quad,noexe
+v_hello:
+	.ascid	/Hello, world!/
+v_prompt:
+	.ascid	/Well? /
+
+v_inlen:
+	.word	0
+v_buffer:
+	.blkb	c_max_len
+v_buffer_dsc:
+	.word	c_max_len
+	.byte	dsc$k_dtype_t
+	.byte	dsc$k_class_s
+	.long	v_buffer
+
+v_outdsc:
+v_outlen:
+	.word	0
+	.byte	dsc$k_dtype_t
+	.byte	dsc$k_class_s
+v_outadr:
+	.long	0
+
+	.psect	try_lib_iocode,exe,nowrt
+
+	.entry	try_lib_io,^m<>
+	pushaq	v_hello
+	calls	#1,g^lib$put_output
+	blbc	r0,the_end		; exit now
+
+	pushaw	v_inlen
+	pushaq	v_prompt
+	pushaq	v_buffer_dsc
+	calls	#3,g^lib$get_input
+	blbc	r0,the_end		; exit now
+
+	movw	v_inlen,v_outlen
+	moval	v_buffer,v_outadr
+	pushaq	v_outdsc
+	calls	#3,g^lib$put_output
+
+the_end:
+	ret
+	.end	try_lib_io

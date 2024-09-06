@@ -1,0 +1,56 @@
+$	verifying = 'f$verify(f$type(check_freespace_verify) .nes. "")'
+$!> CHECK_FREESPACE.COM -- Check free space of disks and email warning if low
+$!
+$!-----------------------------------------------------------------------------
+$! Vers  When        Who  What
+$! 1.0   2023-09-22  tkb  Initial version
+$! 1.1   2023-09-25  tkb  Convert to new parameter format for DISKUSAGE.COM.
+$! 1.2   2024-02-02  tkb  Add debugging mode.
+$!-----------------------------------------------------------------------------
+$!
+$! Set CHECK_FREESPACE_DEBUG == 1 to turn on debugging mode.  This only 
+$! emails TKB.
+$!
+$!-----------------------------------------------------------------------------
+$       true = -1
+$       false = 0
+$       
+$       dbg = "!"
+$!      dbg = write sys$error
+$       procedure = f$env ("PROCEDURE")
+$       'dbg' "Procedure: ", procedure
+$       'dbg' "Version: 1.1"
+$
+$       debugging = false
+$       if (f$type (check_freespace_debug) .nes. ""
+$       then
+$           if check_freespace_debug
+$           then 
+$               debugging = true
+$           endif
+$       endif
+$
+$	procedure_directory = f$parse(f$env ("PROCEDURE"),,,"DIRECTORY")
+$       
+$	if f$locate ("[MPLLIB", procedure_directory) .ne. f$length (procedure_directory)
+$	then
+$	    du := @ml:diskusage
+$	else
+$	    du := @com:diskusage
+$	endif
+$       tmpfile = "CHECK_FREESPACE_" + f$pid(0) + ".TMP"
+$       'du' -noclolor -output='tmpfile' 'p1' 'p2' 'p3' 'p4' 'p5' 'p6' 'p7' 'p8'
+$       if diskusage_low_disks .nes. ""
+$       then
+$           subject = "Some disks have less than ''diskusage_low_percent'% free space: ''diskusage_low_disks'!"
+$           if debugging
+$           then 
+$	        mail/subject="''subject'" 'tmpfile'
+TKB
+$           else 
+$	        mail/subject="''subject'" 'tmpfile'
+@ML:CHECK_FREESPACE
+$           endif
+$       endif
+$       delete 'tmpfile';0
+$       exit (1 .or. (f$verify(verifying) .and. 0))

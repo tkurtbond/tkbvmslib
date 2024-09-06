@@ -1,0 +1,16 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:29 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$	userfilespec = p1
+$ 10$:
+$	device_name = f$device (, "DISK")
+$	if device_name .eqs. "" then goto 19$
+$	if .not. f$getdvi (device_name, "MNT") then goto 10$
+$	diskfilespec = f$parse (userfilespec, device_name,"[*...]",, "SYNTAX_ONLY")
+$	write sys$output "For disk ", device_name, " using filespec ", diskfilespec
+$	directory 'diskfilespec'
+$	goto 10$
+$ 19$:
+%%E 1

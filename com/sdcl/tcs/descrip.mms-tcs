@@ -1,0 +1,41 @@
+%%s 2/2/20
+%%d D 1.2 13-Aug-24 13:35:13 tkb 2 1
+%%c Update so we can clean exactly the programs that are installed.
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 11:56:50 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+! DESCRIP.MMS - first stage DESCRIP.MMS for building .COMs from .SDCLs.
+!
+! Edit PROGRAMS.DAT to add finished programs to be installed.
+
+.SUFFIXES .GENMMS
+%%D 2
+GENMMS=programs.genmms install.genmms rules.genmms
+%%E 2
+%%I 2
+GENMMS=programs.genmms install.genmms rules.genmms clean.genmms
+%%E 2
+
+all : $(GENMMS)
+        $(MMS)/desc=descrip_s2 all
+
+install : $(GENMMS)
+        $(MMS)/desc=descrip_s2 install
+
+clean : $(GENMMS)
+        $(MMS)/desc=descrip_s2 clean
+
+
+%%D 2
+programs.genmms include.genmms rules.genmms : programs.dat
+%%E 2
+%%I 2
+programs.genmms include.genmms rules.genmms clean.genmms : programs.dat
+%%E 2
+        @tolist
+
+
+
+%%E 1

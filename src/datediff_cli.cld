@@ -1,0 +1,14 @@
+!------------------------------------------------------------------------------
+!> DATEDIFF_CLI.CLD - Command Language Definition for DATEDIFF.BAS
+!------------------------------------------------------------------------------
+module datediff_cli
+define verb datediff
+    parameter p1,
+        label = minuend,
+	prompt = "Datetime minuend",
+	value(type = $datetime, required)
+    parameter p1,
+        label = subtrahend,
+	prompt = "Datetime subtrahend",
+	value(type = $datetime, required)
+

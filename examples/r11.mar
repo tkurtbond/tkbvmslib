@@ -1,0 +1,3 @@
+	movl #10,r11
+        movl (r11),r8
+        .end

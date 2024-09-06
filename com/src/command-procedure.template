@@ -1,0 +1,8 @@
+$	verifying = 'f$verify(f$type(REPLACE_WITH_PROCNAME_verify) .nes. "")'
+$!> FILENAME -- DESCRIPTION
+$!-----------------------------------------------------------------------------
+$! Vers  When        Who  What
+$! 1.0   2023-09-22  tkb  Initial version
+$!-----------------------------------------------------------------------------
+$ the_end:
+$       exit (1 .or. (f$verify(verifying) .and. 0))

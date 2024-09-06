@@ -1,0 +1,7 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:52 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ sort/key=(position:46,size:10,decimal,desc) sys$login:personal.size sys$output
+%%E 1

@@ -1,0 +1,16 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:50 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$       esc[0,8] = %x1B ! String now contains an ESC.
+$       csi = esc + "["
+$       red = csi + "1;31m"
+$       normal = csi + "0m"
+$       long = red + "////////////////////////////////////////////////////////////////////////////////" + normal
+$       write sys$output "long's length: ", f$length (long)
+$       write sys$output red, "This is red.", normal, " and this is normal"
+$       write sys$output long
+$       write sys$output long
+$       write sys$output "goodbye"
+%%E 1

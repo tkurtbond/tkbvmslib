@@ -1,0 +1,20 @@
+%%s 0/0/0
+%%d D 1.1 22-Aug-24 15:12:10 tkb 1 0
+%%c Define a DATEDIFF DCL command for parsing the DATEDIFF command line.
+%%T
+%%I 1
+!------------------------------------------------------------------------------
+!> DATEDIFF_CLI.CLD - Command Language Definition for DATEDIFF.BAS
+!------------------------------------------------------------------------------
+module datediff_cli
+define verb datediff
+    parameter p1,
+        label = minuend,
+	prompt = "Datetime minuend",
+	value(type = $datetime, required)
+    parameter p1,
+        label = subtrahend,
+	prompt = "Datetime subtrahend",
+	value(type = $datetime, required)
+
+%%E 1

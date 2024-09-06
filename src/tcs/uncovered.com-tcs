@@ -1,0 +1,7 @@
+%%s 0/0/0
+%%d D 1.1 22-Aug-24 09:56:55 tkb 1 0
+%%c List uncovered files in this directory, ignoring the appropriate files.
+%%T
+%%I 1
+$ tcs uncovered -ignore=exe,lis,icx,obj,u1,u2,olb
+%%E 1

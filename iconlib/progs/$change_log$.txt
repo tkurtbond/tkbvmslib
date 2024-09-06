@@ -1,0 +1,28 @@
+Fri Oct 24 16:22:31 2003  T. Kurt Bond  (TKB at MPLVAX)
+
+	* descrip.mms: Fix rules for creating .icx files.  Add
+	short_test.lis and long_test.lis targets for testing.
+
+	* mxrejsum.icn (usage): created.
+
+	(main): added -i and -version flags, call usage if error in
+	command line arguments.  Print file names if verbose.
+
+	(record statistics): renamed rej to reject, drej to dreject, added
+	relay, drelay, renamed mbox to frombox, added tobox, added bl for
+	black lists.
+
+	(process_file): created ipset and hostset to get rid of cset
+	concatenation for every line.  At user specified intervals print a
+	dot in verbose mode.  Keep track of spam discarded by disabled
+	relay using stats.relay and stats.drelay.  Fix matching of mailbox
+	names so that they are separated into originating and receiving
+	mailboxes.  Fix matching of ip addresses so missing IP address
+	doesn't save junk.  Add matching and tracking of blacklists that
+	report hits.
+
+	(write_statistics): General rewording of messages.  Only say
+	"Top <n>" if size of table is greater than <n>.  Don't print
+	headers for empty tables.  Print relay, to mailbox, and blacklist
+	statistics. 
+

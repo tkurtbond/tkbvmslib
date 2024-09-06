@@ -1,0 +1,51 @@
+    verify_on = 'f$verify(0)'
+##----------------------------------------------------------------------------!
+##                      
+## Program:        SDCL.SDCL
+## Written By:     C. Paul Bond
+## Version:        2.01
+## Date:           2021-09-08
+##
+## Description:	
+##
+## This short SDCL program provides a default name for
+## the sdcl pre-processor.
+##
+## History:
+## Ver     When        Who  What
+## 1.00	   ??????      cpb  Initial version
+## 2.00    1988-10-12  tkb  Handle wild-cards and more than one file-spec, new SDCL
+## 2.01    2021-09-08  tkb  Adapt to current SDCL.
+##----------------------------------------------------------------------------!
+!> SDCL.SDCL -- provide default name and extension for the SDCL preprocessor
+    file = p1
+    switches = p2
+    sdcl_processor = "$exe_lib:sdcl"
+
+    if (f$extract(0, 1, file) .eqs. "-") {
+        switches = file
+        file = ""
+    }
+
+    if (file .eqs. "") {
+        inquire file "_SDCL file <''f$trnlnm("EDIT_FILE")'>"
+        if (file .eqs. "") file = f$trnlnm("EDIT_FILE")
+        if (file .eqs. "") exit (1 .or. (f$verify(verify_on) .and. 0))
+    }
+
+    define edit_file 'file'
+    write sys$output "Processing ''f$parse(file,,,"name")'"
+    file = f$parse(file, ".sdcl")
+    i = f$locate("]", file)
+    if (i .ne. f$length(file)) {
+        file = f$extract(i + 1, f$length(file), file)
+        i = f$locate("]", file)
+        if (i .ne. f$length(file)) 
+            file = f$extract(i + 1, f$length(file), file)
+    }
+
+
+    sdcl_processor 'file' 'switches'
+
+The_End:
+    exit (1 .or. (f$verify(verify_on) .and. 0))

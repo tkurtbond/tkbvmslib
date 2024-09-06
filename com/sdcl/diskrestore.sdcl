@@ -1,0 +1,104 @@
+###############################################################################
+# Program: D I S K R E S T O R E . S D C L
+# Written By:	Thomas Kurt Bond
+#
+# Purpose:  This command procedure restores a disk drive from an Image 
+# backup save set and a series of Incremental backup save sets.  
+#
+###############################################################################
+
+   ##Usefull abbrieviations and constants 
+   inq :== inquire/nopun
+   wso :== write sys$output
+   true = (1 .eq. 1)
+   false = .not. true
+
+   ##Initialize variables 
+   debug = true
+   disk_drive = ""
+   disk_label = ""
+   tape_drive = ""                    
+   save_set = ""
+
+
+   ##Restore from Image Backup
+   inq answer "Restore from an Image Backup? [y]: "
+   if (answer .eqs. "") answer = "Y"
+   if (answer) {
+      ##Restore a disk drive from an Image backup save set.
+      wso "Beginning of Restore from Image Backup"
+      inq disk_drive "Disk Drive: "
+      if (disk_drive .eqs. "") goto The_End 
+      if (f$locate(":", disk_drive) .eq. f$length(disk_drive)) 
+	 disk_drive = disk_drive + ":"
+      inq tape_drive "Tape Drive: "
+      if (tape_drive .eqs. "")
+          goto The_End
+      if (f$locate(":", tape_drive) .eq. f$length(tape_drive)) 
+	 tape_drive = tape_drive+ ":"
+      inq save_set "Save Set: "
+      if (save_set .eqs. "")
+          goto The_End
+      if (.not debug) {
+	 mount/foreign disk_drive
+	 mount/foreign tape_drive
+	 backup/image/record 'tape_drive''save_set' 'disk_drive'
+	 dismount/nounload disk_drive
+	 dismount tape_drive
+      } else {
+	 wso "Message: mount/foreign ''disk_drive'"
+	 wso "Message: mount/foreign ''tape_drive'"
+	 wso "Message: backup/image/record ''tape_drive'''save_set' ''disk_drive'"
+	 wso "Message: dismount/nounload ''disk_drive'"
+	 wso "Message: dismount ''tape_drive'"
+      }					#End of if debug
+      wso "End of Restore from Image Backup"
+   }					#End of if restore Image Backup
+
+
+   ##Restore from Incremental Backup
+   inq answer "Do you want to restore from Incremental Backups? [Y]: "
+   if (answer .eqs. "") answer = "Y"
+   if (answer) {               
+      ##Restore from Incremental Backup save sets.  
+      ##Do from most recent to oldest. 
+      wso "Beginning of Restore from Incremental Backup"
+      wso "     Restore in order from most recent Incremental Backup to"
+      wso "     oldest Incremental Backup."
+      if (disk_drive .eqs. "") 
+	 inq disk_drive "Disk Drive: "
+      if (disk_drive .eqs. "") goto The_End
+      if (f$locate(":", disk_drive) .eq. f$length(disk_drive)) 
+	 disk_drive = disk_drive + ":"
+      inq disk_label "Disk Label (NO colon): "
+      if (disk_label .eqs. "") goto The_End
+      if (tape_drive .eqs. "") 
+	 inq tape_drive "Tape Drive: "
+      if (tape_drive .eqs. "") goto The_End
+      if (f$locate(":", tape_drive) .eq. f$length(tape_drive)) 
+	 tape_drive = tape_drive+ ":"
+      if (.not. debug) 
+	 mount disk_drive disk_label
+      else
+	 wso "Message: mount ''disk_drive' ''disk_label'"
+      do {
+	 inq save_set "Save Set (Hit return to exit): "
+	 if (save_set .eqs. "") break
+	 if (.not. debug) {
+	    mount/foreign 'tape_drive'
+	    backup/incremental 'tape_drive''save_set' 'disk_drive'
+	    dismount 'tape_drive'
+	 } else {
+	    wso "Message: mount/foreign ''tape_drive'"
+	    wso "Message: backup/incremental ''tape_drive'''save_set' ''disk_drive'"
+	    wso "Message: dismount ''tape_drive'"
+	 }
+      } while (true)			#End of Save Set Loop
+      wso "End of Restore from Incremental Backup"
+   }					#End of Restore form Incremental Backup
+
+   ##End of Command Procedure
+The_End:
+   wso "End of Restore Command Procedure"
+   exit
+

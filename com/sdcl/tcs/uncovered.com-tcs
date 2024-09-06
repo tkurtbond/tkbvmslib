@@ -1,0 +1,8 @@
+%%s 0/0/0
+%%d D 1.1 22-Aug-24 14:14:14 tkb 1 0
+%%c List the files in the current directory that do not have matching files in 
+%%c [.TCS], ignoring the appropriate files.
+%%T
+%%I 1
+$ tcs uncovered -ignore=com,genmms
+%%E 1

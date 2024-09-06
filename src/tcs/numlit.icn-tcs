@@ -1,0 +1,31 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 16:12:20 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+procedure main ()
+  local line, token, prefix
+  while line := !&input do
+    {
+      line ? {
+	token := &null
+	tab (many (' \t'))
+	token :=
+	  (((prefix <- 1) &
+	    (="D"|="d"|="B"|="b"|="O"|="o"|="X"|="x"|="A"|="a")) |
+	   ((prefix <- 2) & "")) ||
+	  ="\"" || tab (many (~'"')) || ="\"" ||
+	  ((="B" | ="b" | ="W" | ="w" | ="L" | ="l" | ="F" | ="f" | ="D" |
+	    ="d" | ="G" | ="g" | ="H" | ="h" | ="P" | ="p" | ="C" | ="c") |
+	   ((prefix = 1) & ""))
+
+	if \token then
+	  write ("token: ", token)
+	else
+	  write ("no token")	
+      }
+    }
+end # main
+  
+      
+%%E 1

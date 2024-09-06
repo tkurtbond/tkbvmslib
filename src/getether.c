@@ -1,0 +1,298 @@
+#module GET_ETHERNET_ADDRESS "V2.22"
+
+/*
+   Program to find the physical and hardware address of the Ethernet
+   devices.
+
+   The idea came from a FORTRAN program on DSIN, but there have been
+   so many changes that it's probably not recognizable anymore.
+
+   You must run from a privileged account in order to get the network
+   address, otherwise you will get an error when you try to assign a
+   channel to the xxA1: device.  But you should still be able to get
+   the ethernet hardware address.
+
+   B. Z. Lederman    9-Nov-1990
+		    27-Dec-1990	'Collapse' code.
+*/
+
+#include STDIO
+#include IODEF
+#include DESCRIP
+#include SSDEF
+
+#define NMA$C_PCLI_PHA 2820	/* apparently not in any header files	*/
+#define NMA$C_PCLI_HWA 1160
+
+int status;			/* for system calls			*/
+short int netchan;		/* I/O channel assigned			*/
+unsigned short int look_for;	/* identifies the address data		*/
+
+/* Define the I/O status block						*/
+
+struct iostat_block
+{
+    short int iostat;
+    short int transfer_size;
+	 char FILLER_1;
+	 char unit_status;
+	 char error_summary;
+	 char FILLER_2;
+} iosb;
+
+/* Define the Extended Characteristics Block				*/
+
+union
+{
+    unsigned      char b[512];
+    unsigned short int w[256];
+} ext_char;
+
+struct dsc$descriptor_s msg_dsc =		/* dynamic descriptor	*/
+   {0, DSC$K_DTYPE_T, DSC$K_CLASS_D, 0};	/* for error messages	*/
+
+#pragma noinline asn_chan		/* force this to be a routine	*/
+#pragma noinline get_char		/* force this to be a routine	*/
+#pragma noinline print_address		/* force this to be a routine	*/
+
+void asn_chan (struct dsc$descriptor_s *dev_name)
+{
+    status = SYS$ASSIGN (dev_name, &netchan, 0, 0);
+    if ((status & 1) != 1)
+    {
+	printf ("\n Error assigning a channel to %5s ",
+			dev_name->dsc$a_pointer);
+
+	if (status == SS$_DEVALLOC)	/* If device is allocated, we	*/
+	{				/* don't have sufficient	*/
+	    exit (status);		/* privilege to get to it, so	*/
+	};				/* we should quit now.		*/
+
+	LIB$SYS_GETMSG (&status, 0, &msg_dsc, 0, 0);	/* get error	*/
+	LIB$PUT_OUTPUT (&msg_dsc);			/* text and	*/
+    }							/* display it.	*/
+    else
+    {
+	printf ("\n Assigned channel %X to %5s ", netchan,
+			dev_name->dsc$a_pointer);
+    };
+
+    return;
+}
+
+void get_char ()
+{
+/* Define Characteristics Block						*/
+
+    struct characteristics
+    {
+	char class;
+	char type;
+	short int max_msg_size;
+	char FILLER_1;
+	char unit_status;
+	char error_summary;
+	char FILLER_2;
+    } charbuf;			/* specified in QIO but not used	*/
+
+/* Define Extended Characteristics Block Descriptor			*/
+
+    struct ext_char_desc
+    {
+	int length;
+	int address;
+    } ext_desc = {sizeof(ext_char), &ext_char};
+
+    int func = (IO$_SENSEMODE | IO$M_CTRL);
+
+/* Do the QIO to get characteristics					*/
+
+    status = SYS$QIOW (0, netchan, func, &iosb, 0, 0,
+			&charbuf, &ext_desc, 0, 0, 0, 0);
+
+    if ((status & 1) != 1)
+    {
+	printf ("\n Error doing SYS$QIOW to get characteristics.");
+	status = LIB$SYS_GETMSG (&status, 0, &msg_dsc, 0, 0);
+	status = LIB$PUT_OUTPUT (&msg_dsc);
+	printf ("\n iosb = %x, %x", iosb.iostat, iosb.transfer_size);
+	printf ("\n iosb.unit_status = %x", iosb.unit_status);
+	printf ("\n iosb.error_summary = %x", iosb.error_summary);
+    };
+
+    if ((iosb.iostat & 1) != 1) LIB$SIGNAL (iosb.iostat);
+
+/*   Deassign the channel to the Ethernet device.			*/
+
+    status = SYS$DASSGN (netchan);
+    if ((status & 1) != 1)
+    {
+	printf ("\n Error on SYS$DASSGN");
+	status = LIB$SYS_GETMSG (&status, 0, &msg_dsc, 0, 0);
+	status = LIB$PUT_OUTPUT (&msg_dsc);
+    };
+
+    return;
+}
+
+void print_address (char *type)
+{
+    int i, j, k;
+    char addr_str[20];
+
+    i = 2;
+    while (i < iosb.transfer_size)
+    {
+	j = (i / 2);
+	if ( (ext_char.w[j - 1] & 0xFFF) == look_for)
+	{
+	    sprintf (&addr_str, "%2X-%2X-%2X-%2X-%2X-%2X",
+		    ext_char.b[i + 2],
+		    ext_char.b[i + 3],
+		    ext_char.b[i + 4],
+		    ext_char.b[i + 5],
+		    ext_char.b[i + 6],
+		    ext_char.b[i + 7]);
+
+	    for (k = 0;  k < strlen (addr_str);  k++)
+	    {
+	    	 if (addr_str[k] == ' ')	/* apparently, the only */
+		 {				/* way to get leading	*/
+		     addr_str[k] = '0';		/* zeros on hex numbers	*/
+		 };
+	    };
+
+	    printf ("\n*****************************************");
+	    printf ("\n %s Address = %s", type, &addr_str);
+	    printf ("\n*****************************************");
+
+	    break;
+	};
+
+	if ( (ext_char.w[j - 1] & 0x1000) == 0)
+	{
+	    i = i + 6;
+	}
+	else
+	{
+	    if (look_for == NMA$C_PCLI_HWA)
+	    {
+		i = i + ext_char.w[j - 1] + 4;
+	    }
+	    else
+	    {
+		i = i + ext_char.w[j] + 4;
+	    };
+	};
+    };
+
+    return;
+}
+
+/*		    **** MAIN PROGRAM STARTS HERE ****			*/
+
+main()
+{
+    char hardware_str[] = "Hardware", network_str[] = "Network";
+
+    $DESCRIPTOR (xq_name, "XQA0:");
+    $DESCRIPTOR (xe_name, "XEA0:");
+    $DESCRIPTOR (es_name, "ESA0:");
+    $DESCRIPTOR (et_name, "ETA0:");
+    $DESCRIPTOR (sv_name, "SVA0:");
+
+    $DESCRIPTOR (xq1_name, "XQA1:");
+    $DESCRIPTOR (xe1_name, "XEA1:");
+    $DESCRIPTOR (es1_name, "ESA1:");
+    $DESCRIPTOR (et1_name, "ETA1:");
+    $DESCRIPTOR (sv1_name, "SVA1:");
+
+/*   Assign an I/O channel to the Ethernet device			*/
+
+    netchan = 0;
+
+    if (netchan == 0)
+    {
+	asn_chan (&xq_name);
+    };
+
+    if (netchan == 0)
+    {
+	asn_chan (&xe_name);
+    };
+
+    if (netchan == 0)
+    {
+	asn_chan (&es_name);
+    };
+
+    if (netchan == 0)
+    {
+	asn_chan (&et_name);
+    };
+
+    if (netchan == 0)
+    {
+	asn_chan (&sv_name);
+    };
+
+    if (netchan == 0)
+    {
+	exit (SS$_NOSUCHDEV);	/* no Ethernet device			*/
+    };
+
+    get_char();			/* Do a QIO to get characteristics	*/
+
+/* Find the hardware address and print it				*/
+
+    look_for = NMA$C_PCLI_HWA;
+
+    print_address (&hardware_str);
+
+/*
+   Assign an I/O channel to the ethernet adapter.  Device name used
+   must be a device other than the template or you receive the hardware
+   address instead.
+*/
+    netchan = 0;
+
+    if (netchan == 0)
+    {
+	asn_chan (&xq1_name);
+    };
+
+    if (netchan == 0)
+    {
+	asn_chan (&xe1_name);
+    };
+
+    if (netchan == 0)
+    {
+	asn_chan (&es1_name);
+    };
+
+    if (netchan == 0)
+    {
+	asn_chan (&et1_name);
+    };
+
+    if (netchan == 0)
+    {
+	asn_chan (&sv1_name);
+    };
+
+    if (netchan == 0)
+    {
+	exit (SS$_NODEVAVL);	/* couldn't assign a device: probably	*/
+    };				/* not privileged.			*/
+
+    get_char ();		/* Get characteristics again.		*/
+
+/* Find the network address and print it				*/
+
+    look_for = NMA$C_PCLI_PHA;
+
+    print_address (&network_str);
+
+    exit (SS$_NORMAL);		/* all done				*/
+}

@@ -1,0 +1,198 @@
+
+
+
+
+DIFF(1)             UNIX Programmer's Manual              DIFF(1)
+
+
+
+NAME
+     diff - Public Domain diff (context diff) program
+
+SYNOPSIS
+     diff [ -b -c -i -e ] file1 file2
+
+DESCRIPTION
+     Diff compares two files, showing what must be changed to
+     make them identical. Either file1 or file2 (but not both)
+     may refer to directories. If that is the case, a file in the
+     directory whose name is the same as the other file argument
+     will be used. The standard input may be used for one of the
+     files by replacing the argument by "-". Except for the stan-
+     dard input, both files must be on disk devices.
+
+OPTIONS
+     -b Remove trailing whitespace (blanks and tabs) and compress
+          all other strings of whitespace to a single blank.
+
+     -c Print some context -- matching lines before and after the
+          non-match section.  Mark non-matched sections with "|".
+
+     -i Ignore lower/upper case distinctions.
+
+     -e Output is in an "editor script" format which is compati-
+          ble with the Unix 'ed' editor.
+
+     All information needed to compare the files is maintained in
+     main memory. This means that very large files (or fairly
+     large files with many differences) will cause the program to
+     abort with an "out of space" message. Main memory require-
+     ments (in words) are approximately:
+
+               2 * (length of file1 + length of file2)
+                      + 3 * (number of changes)
+
+     (Where "length" is the number of lines of data in each
+     file.)
+
+     The algorithm reads each file twice, once to build hash
+     tables and once to check for fortuitous matches (two lines
+     that are in fact different, but which have the same hash
+     value). CPU time requirements include sorting the hash
+     tables and randomly searching memory tables for equivalence
+     classes. For example, on a time-shared VAX-11/780, comparing
+     two 1000 line files required about 30 seconds (elapsed clock
+     time) and about 10,000 bytes of working storage. About 90
+     per-cent of the time was taken up by file I/O.
+
+DIAGNOSTICS
+
+
+
+
+                             4.2 BSD                            1
+
+
+
+
+
+
+
+DIFF(1)             UNIX Programmer's Manual              DIFF(1)
+
+
+
+     Warning, bad option 'x'
+          The option is ignored.
+
+     Usage ...
+          Two input files were not specified.
+
+     Can't open input file "filename".
+          Can't continue.
+
+     Out of space
+          The program ran out of memory while comparing the two
+          files.
+
+     Can't read line nnn at xxx in file[A/B]
+          This indicates an I/O error when seeking to the
+          specific line.  It should not happen.
+
+     Spurious match, output is not optimal.
+          Two lines that were different yielded the same hash
+          value.  This is harmless except that the difference
+          output is not the minimum set of differences between
+          the two files.  For example, instead of the output:
+                     lines 1 to 5 were changed to ...
+          the program will print
+                     lines 1 to 3 were changed to ...
+                     lines 4 to 5 were changed to ...
+
+     The program uses a CRC16 hash code.
+          The likelihood of this error is quite small.
+
+AUTHOR
+     The diff algorithm was developed by J. W. Hunt and M. D.
+     McIlroy, using a central algorithm defined by H. S. Stone.
+     It was published in:
+          Hunt, J. W., and McIlroy, M. D.,
+          An Algorithm for Differential File Comparison,
+          Computing Science Technical Report #41,
+          Bell Laboratories, Murray Hill, NJ  07974
+
+BUGS
+     On RSX and DECUS C on VMS systems, diff may fail if the both
+     files are not "variable-length, implied carriage control"
+     format.  The scopy program can be used to convert files to
+     this format if problems arise.
+
+     When compiled under VAX C, diff handles STREAM_LF files
+     properly (in addition to the canonical variable-length
+     implied carriage control files). Other variations should
+     work, but have not been tested.
+
+
+
+
+
+                             4.2 BSD                            2
+
+
+
+
+
+
+
+DIFF(1)             UNIX Programmer's Manual              DIFF(1)
+
+
+
+     When compiled under VAX C, diff is quite slow for unknown
+     reasons which ought to be investigated. On the other hand,
+     it has access to effectively unlimited memory.
+
+     Output in a form suitable for ed - the -e option - seems
+     rather pointless; the analogue on DEC systems is SLP (SUMSLP
+     on VMS). It would be simple to provide SLP-compatible out-
+     put. The question is, why bother - since the various DEC
+     file comparison utilities already produce it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             4.2 BSD                            3
+
+
+

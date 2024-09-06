@@ -1,0 +1,16 @@
+%%s 1/1/1
+%%d D 1.2 06-Sep-24 13:19:36 tkb 2 1
+%%c Rename [MPL.TKB.LIB] to [MPL.TKB.TKBVMSLIB].
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:25 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ file :== $exe_lib:file
+%%D 2
+$ @com:add_help_lib mpl$data:[mpl.tkb.lib.hlp]file.hlb
+%%E 2
+%%I 2
+$ @com:add_help_lib mpl$data:[mpl.tkb.tkbvmslib.hlp]file.hlb
+%%E 2
+%%E 1

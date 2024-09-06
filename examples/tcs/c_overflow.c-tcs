@@ -1,0 +1,19 @@
+%%s 0/0/0
+%%d D 1.1 21-Aug-24 13:31:13 tkb 1 0
+%%c Show what when you overflow a C long: it just wraps to negative.
+%%T
+%%I 1
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int
+main (int argc, char **argv)
+{
+  long lmax = LONG_MAX;
+  lmax ++;
+  printf ("LONG_MAX: %+ld\n", LONG_MAX);
+  printf ("lmax+1:   %ld\n", lmax);
+  exit (EXIT_SUCCESS);
+}
+%%E 1

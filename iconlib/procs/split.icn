@@ -1,0 +1,11 @@
+procedure split (s, delim)
+    local items, x, rangespecs
+    items := []
+    rangespecs := []
+    s ? {
+        while put (items, tab (upto (delim))) do
+            move (1)
+        put (items, tab (0))
+    }
+    return items
+end # split

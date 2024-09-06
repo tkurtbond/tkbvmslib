@@ -1,0 +1,89 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:55:31 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+!> TODIRFILE.SDCL -- Convert a file specification into a directory file name.
+###############################################################################
+### Status is written to global symbol TODIRFILE_STATUS.
+### Result is written to global symbol TODIRFILE_VALUE.
+###############################################################################
+    exit_quiet   = %x10000000
+    exit_failure = 2 .or. exit_quiet
+    exit_success = 1
+
+    verbose = f$type (todirfile_verbose) .nes. ""
+    wso := write sys$output
+    wse := write sys$error
+
+    del/sym/glo todirfile_value
+    del/sym/glo todirfile_status
+
+    File_or_dir = p1
+    # wso "file_or_dir: ", file_or_dir
+
+    gosub split_path
+
+    if (filetype .eqs. ".DIR") {        # .DIR file, so no need to change
+        if (verbose) wse "todirfile: No need to change ", file_or_dir
+        todirfile_value == file_or_dir
+        todirfile_status == exit_success
+    } else if ((filename .nes. "") .and. (filetype .nes. ".DIR")) {
+        if (verbose) wse "todirfile: a directory file: ", file_or_dir
+        todirfile_value == ""
+        todirfile_status == exit_failure
+    } else if ((filename .eqs. "") .and. (filetype .eqs. ".")) {
+        # No filename at all, so check if it has a dirspec
+        # wso "Is it a dirspec?"
+        if (dirspec .eqs. "[]") {
+            gosub split_path
+        }
+        if ((f$extract (0, 1, dirspec) .eqs. "[") .and. -
+                (f$extract (f$length (dirspec) - 1, 1, dirspec) .eqs. "]")) {
+            just_dirs = dirspec - "[" - "]"
+            # wso "just_dirs: ", just_dirs
+            if (just_dirs .eqs. "") {
+                wse "todirfile: error, unable to turn ", file_or_dir, " into a directory file"
+                todirfile_status == exit_failure
+                todirfile_vvalue == ""
+            }
+            accum = "["
+            old = ""
+            for (i = 0; f$element (i, ".", just_dirs) .nes. "."; i = i + 1) {
+                if (i .gt. 1) accum = accum + "."
+                accum = accum + old
+                part = f$element (i, ".", just_dirs)
+                old = part
+                # wso "Part ", i, ": ", part, " accum: ", accum
+            }
+            # We have the last element in part, and the preceeding directories
+            # in accum.
+            accum = accum + "]"
+            if (accum .eqs. "[]") {     # Need to start at the disks top directory
+                accum = "[000000]"
+            }
+            spec = devspec + accum + part + ".DIR"
+            if (verbose) wso "=> result: ", spec
+            todirfile_status == exit_success
+            todirfile_value == spec
+            
+        } else {
+            wse "todirfile: error: Don't know what to do with ", file_or_dir
+            todirfile_status == exit_failure
+            todirfile_value == ""
+        }
+    }
+
+the_end:
+    exit exit_success
+
+        
+        
+split_path:
+    devspec = f$parse (file_or_dir,,, "DEVICE")
+    dirspec = f$parse (file_or_dir,,, "DIRECTORY")
+    filename = f$parse (file_or_dir,,, "NAME")
+    filetype = f$parse (file_or_dir,,, "TYPE")
+    # wso "Device: ", devspec, "Directory: ", dirspec, " Filename: ", filename, " Filetype: ", filetype
+    return ! from split_path
+%%E 1

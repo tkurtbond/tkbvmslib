@@ -1,0 +1,90 @@
+procedure tkb_space( number )
+  local
+    c, spaces;
+  
+  spaces := "";
+  c := 0;
+  loop
+    exitif c >= number;
+    spaces := spaces + " ";
+    c := c + 1;
+  endloop;
+  return( spaces );
+  
+endprocedure ! tkb_space( number )
+
+
+procedure tkb_worktime
+  local
+    day, month, year, description, time, 
+    old_description, old_time, old_billto, old_hours, 
+    rightmargin, leftmargin;   
+  
+  rightmargin := get_info( current_buffer, "right_margin" );
+  leftmargin := get_info( current_buffer, "left_margin" );
+  set( margins, current_buffer, leftmargin, 132 );
+  position( end_of( current_buffer ) );
+  year := read_line( 'Year: ' );
+  if year = "" then
+    return 0;
+  endif;
+  if length( year ) < 2 then
+    year := '0' + year;
+  endif;
+  month := read_line( 'Month: ' );
+  if month = "" then
+    return 0;
+  endif;
+  if length( month ) < 2 then
+    month := '0' + month;
+  endif;
+  old_description := "";
+  old_time := "";
+  old_billto := "";
+  old_hours := "";
+  day := read_line( 'Day: ' );
+  loop
+    exitif day = "";                                              
+    if length( day ) < 2 then
+      day := '0' + day;
+    endif;
+    time := read_line( 'Time: ' );
+    if time = "" then 
+      time := old_time;
+    endif;
+    time := time + tkb_space( 20 - length( time ) );
+    description := read_line( 'Description: ' );
+    if description = "" then
+      description := old_description;
+    endif;
+    description := description + tkb_space( 30 - length( description ) );
+    billto := read_line( 'Bill to: ' );
+    if billto = "" then
+       billto := old_billto;
+    endif;
+    billto := billto + tkb_space( 13 - length( billto ) );
+    hours := read_line( 'Hours: ' );
+    if hours = "" then
+       hours := old_hours;
+    endif;
+!    hours := hours + tkb_space( 5 - length( hours ) );
+    copy_text( month + '/' + day + '/' + year + ' ' + time + ' ' 
+       + description + ' ' + billto + ' ' + hours );
+    split_line;
+    update( current_window );
+    old_hours := hours;
+    old_billto := billto;
+    old_description := description;
+    old_time := time;
+    day := read_line( 'Day: ' );
+  endloop;
+  append_line;
+  set( margins, current_buffer, leftmargin, rightmargin );
+
+endprocedure ! tkb_worktime
+
+
+define_key( 'tkb_worktime', key_name( 'T', shift_key ) );
+message( 'TIMES.TPU installed, hit Gold T to start adding hours.' );
+! tkb$s := read_line( 'Hit Return to continue...' );
+

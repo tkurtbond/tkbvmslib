@@ -1,0 +1,7 @@
+(defun do-it (limit)
+  (interactive "NLimit: ")
+  (let ((n 0)
+	(l nil))
+    (while (< n limit)
+      (setq l (cons n l))
+      (setq n (1+ n)))))

@@ -1,0 +1,83 @@
+%%s 10/9/43
+%%d D 1.2 21-Aug-24 13:05:04 tkb 2 1
+%%c Add a couple more test cases.
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 16:12:20 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+/* lltoa.c -- https://stackoverflow.com/a/18858248 */
+#include <limits.h>
+
+#ifdef __VMS__
+#include <ll_limits.h>
+#endif                          /* defined(__VMS__) */
+
+
+char* lltoa(long long val, int base){
+
+  static char buf[64] = {0};
+
+  int i = 62;
+  int sign = (val < 0);
+  if(sign) val = -val;
+
+  if(val == 0) return "0";
+
+  for(; val && i ; --i, val /= base) {
+    buf[i] = "0123456789abcdef"[val % base];
+  }
+
+  if(sign) {
+    buf[i--] = '-';
+  }
+  return &buf[i+1];
+
+}
+
+
+#ifdef TEST
+#include <stdio.h>
+
+int main() {
+  long long a = LLONG_MAX;
+%%D 2
+  long long b = LLONG_MIN + 1;
+  long long c = 23;
+%%E 2
+%%I 2
+  long long b = LLONG_MIN;
+  long long c = LLONG_MIN + 1;
+  long long d = 23;
+%%E 2
+#if 0
+  /* gcc 2.7.1 Warns that this causes an integer overflow in expression. */
+%%D 2
+  long long d = LLONG_MAX + 1;
+%%E 2
+%%I 2
+  long long 3 = LLONG_MAX + 1;
+%%E 2
+#endif
+
+  printf("%ld\n", sizeof(a));
+%%D 2
+  printf("max '%s'\n", lltoa(a, 10));
+  printf("min '%s'\n", lltoa(b, 10));
+  printf("-1  '%s'\n", lltoa((long long)-1, 10));
+  printf("23  '%s'\n", lltoa(c, 10));
+#if 0
+  printf("min '%s'\n", lltoa(d, 10));
+%%E 2
+%%I 2
+  printf("max   '%s'\n", lltoa(a, 10));
+  printf("min   '%s'\n", lltoa(b, 10));
+  printf("min+1 '%s'\n", lltoa(c, 10));
+  printf("-1    '%s'\n", lltoa((long long)-1, 10));
+#if 1
+  printf("23    '%s'\n", lltoa(d, 10));
+%%E 2
+#endif 
+}
+#endif                          /* defined (TEST) */
+%%E 1

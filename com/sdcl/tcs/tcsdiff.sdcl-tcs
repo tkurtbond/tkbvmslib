@@ -1,0 +1,267 @@
+%%s 1/1/92
+%%d D 1.7 16-Aug-24 15:06:29 tkb 7 6
+%%c Removed extraneous comma.
+%%s 20/9/73
+%%d D 1.6 15-Aug-24 13:48:13 tkb 6 5
+%%c Change TCSDIFF.SDCL to compare a file in the working directory to a revision
+%%c in a specified TCS revision file.
+%%c 
+%%c The former version of TCSDIFF, which defaulted to a TCS file named
+%%c [.TCS]FILE-TCS and was for use with single source files, has been added to
+%%c the TCS.SDCL command procedure as the TCS DIFF command.
+%%s 13/15/69
+%%d D 1.5 15-Aug-24 11:50:49 tkb 5 4
+%%c Removed the -history option, which didn't do what I thought, and replaced it
+%%c with the -revsion=M.N option, which does the right thing.
+%%s 28/10/56
+%%d D 1.4 13-Aug-24 14:46:27 tkb 4 3
+%%c Rename back to TCSDIFF.SDCL.  Add -NODELETE and -STDIFF options.
+%%c Change the TCS filenname to [.TCS]FILE.TYPE-TCS.  Update usage instructions.
+%%s 16/2/50
+%%d D 1.3 18-Jul-24 14:36:33 tkb 3 2
+%%c Add a help message and rename to stcsdiff, since it's for working on .TCS
+%%c files that contain a single source file.
+%%s 2/1/50
+%%d D 1.2 14-Jul-24 16:25:08 tkb 2 1
+%%c Delete temporary file after we're done.
+%%s 0/0/0
+%%d D 1.1 14-Jul-24 16:21:27 tkb 1 0
+%%c Initial checkin.
+%%c TCSDIFFF compares a source file in the current directory with an earlier 
+%%c revision in a .TCS file.
+%%T
+%%I 1
+%%D 3
+!> TCSDIFF.SDCL -- Compare current source vs. older history in a .TCS file.
+%%E 3
+%%I 3
+%%D 4
+!> STCSDIFF.SDCL -- Compare current source vs. older history in a .TCS file.
+%%E 4
+%%E 3
+%%I 4
+%%D 6
+!> TCSDIFF.SDCL -- Compare FILE.TYPE vs. history in a [.TCS]FILE.TYPE-TCS file.
+%%E 6
+%%E 4
+%%I 6
+%%D 7
+,!> TCSDIFF.SDCL -- Compare FILE vs. a revision in TCSFILE
+%%E 7
+%%E 6
+%%I 7
+!> TCSDIFF.SDCL -- Compare FILE vs. a revision in TCSFILE
+%%E 7
+        SS$_BADPARAM = %x0014
+%%D 3
+        opt_list = "/HISTORY/"
+%%E 3
+%%I 3
+%%D 4
+        opt_list = "/HELP/HISTORY/"
+%%E 4
+%%E 3
+%%I 4
+        TRUE = 1 .eq. 1
+        FALSE = 1 .ne. 1
+%%D 5
+        opt_list = "/HELP/HISTORY/NODELETE/STDIFF"
+%%E 5
+%%E 4
+%%I 5
+        opt_list = "/HELP/NODELETE/REVISION/STDIFF"
+%%E 5
+        opt_list_len = f$length (opt_list)
+%%D 5
+        history = ""
+        histoption = ""
+%%E 5
+%%I 4
+%%I 5
+        revision = ""
+%%E 5
+        nodelete = FALSE
+        diffcmd = "diff"
+%%E 4
+
+        i = 1
+        while (f$extract (0, 1, p'i') .eqs. "-") {
+            opt = p'i'
+            if ((opt .eqs. "-?") .or (opt .eqs. "-H")) opt = "-HELP"
+            which = f$extract(1, 3, opt)
+            write sys$output "which: ", which
+            ok = (which .nes. "") .and. f$locate ("/" + which, opt_list) .ne. opt_list_len
+            if (ok)
+                gosub OPT$'which'
+            else {
+                write sys$output "tcsdiff: Invalid option: ''opt'"
+                exit SS$_BADPARAM
+            }
+            i = i + 1
+        }
+
+        # Our current source, to be compared to a previous revision.
+        filespec = p'i'
+        if (filespec .eqs. "") {
+            write sys$output "tcsdiff: no filespec specified"
+            exit SS$_BADPARAM
+        }
+
+%%I 6
+        i = i + 1
+        tcsfile = p'i'
+        if (tcsfile .eqs. "") {
+            write sys$output "tcsdiff: no tcsfile specified"
+            exit SS$_BADPARAM
+        }
+
+%%E 6
+        # Diff defaults device and directory to that of first argument,
+        # so fill those in for the current source using f$parse().
+%%D 6
+        filespec = f$parse (filespec)   
+
+%%E 6
+%%I 6
+        filespec = f$parse (filespec)
+%%E 6
+        filename = f$parse (filespec,,, "NAME")
+%%D 4
+        filetype = f$parse (filespec,,, "TYPE") - "."
+        histfile = filename + "-" + filetype + ".TCS"
+        revfile = "SYS$SCRATCH:" + filename + "-" + filetype + ".TMP"
+%%E 4
+%%I 4
+        filetype = f$parse (filespec,,, "TYPE")
+%%D 6
+        histfile = "[.TCS]" + filename + filetype + "-TCS"
+%%E 6
+%%I 6
+
+%%E 6
+        revfile = "SYS$SCRATCH:" + filename + filetype + "-TMP"
+%%E 4
+%%D 6
+        write sys$output "histfile: ", histfile, " revfile: ", revfile
+%%E 6
+%%D 5
+        if (history .nes. "") histoption = "-h" + history
+        write sys$output "history: ", history, " histoption: ", histoption
+        get 'histoption' 'histfile' >'revfile'
+%%E 5
+%%D 2
+        diff 'revfile' 'filespec' 
+%%E 2
+%%I 2
+%%D 4
+        diff 'revfile' 'filespec'
+        delete/log 'revfile';0
+%%E 4
+%%E 2
+%%I 4
+%%I 5
+%%I 6
+        write sys$output "tcsfile: ", tcsfile, " revfile: ", revfile
+%%E 6
+        if (revision .nes. "") write sys$output "revision: ", revision
+%%D 6
+        get 'revision' 'histfile' >'revfile'
+%%E 6
+%%E 5
+%%I 6
+        get 'revision' 'tcsfile' >'revfile'
+%%E 6
+        'diffcmd' 'revfile' 'filespec'
+        if (.not. nodelete) delete/log 'revfile';0
+        else write sys$error "stcsdiff: temporary file ", revfile, " left behind."
+%%E 4
+        exit
+
+%%I 3
+OPT$hel:
+        copy sys$input sys$error
+%%I 4
+%%D 6
+        // tcsdiff.sdcl -- Compare FILE.TYPE vs. history in a [.TCS]FILE.TYPE-TCS file.
+%%E 6
+%%E 4
+%%I 6
+        // tcsdiff.sdcl -- Compare FILE vs. a revision in TCSFILE
+        //
+%%E 6
+        // Usage:
+%%D 4
+        //         @tcsdiff [-h|-?|-help] [-history] SOURCEFILE.SOURCETYPE.
+%%E 4
+%%I 4
+%%D 6
+        //         @tcsdiff [-h|-?|-help] [-history=M.N] [-stdiff] SOURCEFILE.SOURCETYPE.
+%%E 6
+%%E 4
+%%D 6
+        // where SOURCEFILE.SOURCETYPE is the source file you want to compare.
+%%E 6
+%%I 6
+        //
+        //         tcsdiff [-h|-?|-help] [-history=M.N] [-stdiff] FILE TCSFILE
+        //
+        // where FILE is the source file you want to compare and TCSFILE is a
+        // SWTOOLS VOS TCS revision file.
+        // 
+%%E 6
+        // The selected revision will be extracted from SOURCEFILE-SOURCETYPE.TCS
+        // into a temporaty file and compared to the version in the working directory.
+        // The temporary file will be deleted.
+        // 
+        // Options:
+%%D 4
+        //         -history=VER	Compare working source against revision VER.
+        //        -? -h -help	Display help message and exit.
+%%E 4
+%%I 4
+%%D 5
+        //         -history=M.N	 Compare working source against revision M.N.
+%%E 5
+        //        -? -h -help	 Display help message and exit.
+        //	  -stdiff        Use the SWTOOLS diff instead of VMS diff.
+%%E 4
+%%I 5
+        //        -revision=M.N  Compare working source against revision M.N.
+%%E 5
+        exit
+
+%%E 3
+%%D 5
+OPT$his:
+        p = f$locate ("=", opt)
+        l = f$length (opt)
+        if (p .ne. l)
+            history = f$extract (p+1, l, opt)
+        return
+%%E 5
+%%I 4
+%%D 5
+
+
+%%E 5
+OPT$nod:                                # No Delete
+	nodelete = TRUE
+        return
+
+
+
+%%I 5
+OPT$rev:
+        p = f$locate ("=", opt)
+        l = f$length (opt)
+        if (p .ne. l)
+            revision = "-r" + f$extract (p+1, l, opt)
+        return
+
+
+%%E 5
+OPT$std:
+        diffcmd = "stdiff"
+        return        
+%%E 4
+%%E 1

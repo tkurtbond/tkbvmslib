@@ -1,0 +1,66 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:26:33 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+### getsyi.sdcl -- test f$getsyi() by calling with SYSGEN parameters
+
+    mess = f$environment("MESSAGE")
+    open /read /err=cant_open_inf inf sysgen-try.dat
+    open /write /err=cant_open_outf outf sysgen-bad.dat
+
+    total = 0
+    bad = 0
+    set message/nofac/nosev/noiden/notext #so we don't have to see the errors
+    repeat {
+        read inf line /end=done_reading /err=error_reading
+	line = f$edit(line, "UNCOMMENT,COLLAPSE,UPCASE")
+	if (line .nes. "") {
+	    result = f$string(f$getsyi(line))
+	    if ($status .and. 1) 
+	        write sys$output f$fao("!30AS !AS", line, result)
+	    else {
+	        bad = bad + 1
+	        write sys$output f$fao("!30AS !AS", line, "(boom!)")
+		write /err=error_writing outf \
+		    f$fao("!30AS !AS", line, "(boom!)")
+	    }
+	    total = total + 1
+	}
+    }
+
+done_reading:
+    set message 'mess'
+    write sys$output ""
+    write sys$output f$fao("!10<Total:!>!SL!/!10<Bad:!>!SL", total, bad)
+    close inf
+    close outf
+    exit
+
+cant_open_inf: 
+    set message 'mess'
+    write sys$error "getsyi: can't open input file sysgen-try.dat"
+    exit
+
+cant_open_outf: 
+    set message 'mess'
+    write sys$error "getsyi: can't open output file sysgen-bad.dat"
+    if (f$trnlnm("INF") .nes. "") close inf
+    exit
+
+error_reading:
+    set message 'mess'
+    write sys$error "getsyi: error reading input file sysgen-try.dat"
+    write sys$error "        exiting..."
+    if (f$trnlnm("INF") .nes. "") close inf
+    if (f$trnlnm("OUTF") .nes. "") close outf
+    exit
+
+error_writing:
+    set message 'mess'
+    write sys$error "getsyi: error writing output file sysgen-bad.dat"
+    write sys$error "        exiting..."
+    if (f$trnlnm("INF") .nes. "") close inf
+    if (f$trnlnm("OUTF") .nes. "") close outf
+    exit
+%%E 1

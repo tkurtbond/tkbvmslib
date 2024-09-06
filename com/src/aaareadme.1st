@@ -1,0 +1,38 @@
+The following is a list of the command procedures in this directory
+and a brief description of each.  Those with the extension `.SDCL' are
+written in Structured DCL, a preprocessor for DCL that adds
+if-then-else, while, do-while, and for statements.  The original
+version of SDCL can be found in the DECUS VAX SIG Library, tape
+V00143.  Most (if not all) of these SDCL procedures were written with
+a newer version of SDCL (written by T. Kurt Bond) that corrects
+several problems with the original and adds features to the language.
+
+ACCLOGICALS.COM -- Define account specific logical names.
+APPLY_TO.SDCL -- To files matching filespec in P1, apply command in P2&P3
+AUTHORIZE.COM -- run authorize then restore directory and privs
+CALC.COM -- Calculator program. Written by CPB.
+COMPILER.SDCL -- compile and link at terminal or batch.
+DATE_TIME.SDCL -- Date and time pretty printer.
+DCLSYMBOLS.COM -- Define symbols for account, mostly dcl abrieviations.
+DELDIR.SDCL -- Delete a directory and all files in it.
+DIRSIZE.SDCL -- Show total size of directory and all subdirectories.
+DIRTREE.COM -- Create a listing of all directories
+DISKSPACE.COM -- Report current diskspace usage.
+DMS_SYMBOLS.COM -- Define poise dms symbols
+EMACS.COM -- Manage a Kept Emacs. Based on MG.COM, from MicroGnuEmacs.
+EOJ.COM -- Log out if (subprocess or (master process and no subprocess))
+ERRORS.COM -- Display the errors on the disk drives.
+ESCAPES_SETUP.COM -- Set up escape sequences for vt100
+EVE.COM -- Make eve a kept process (based on MG.COM)
+KEPT.COM -- Attach to a kept process
+KEPT_EDITOR.COM -- Set up editor in subprocess
+KILL.SDCL -- Removes all files with the same ending
+LIBLOGICALS.COM -- Define logical names for library programs. 
+LIBSYMBOLS.COM -- Define symbols for library programs.
+LOOP.SDCL -- execute a command repeatedly
+MAKECOMMAND.SDCL -- Make foreign command symbol for a program.
+MARK.COM -- Define the current directory as a logical
+PIPES.SDCL -- UNIX style pipes and i/o redirection
+SETUP.COM -- Define all special items for the process.
+TERMPRINT.COM -- Print files to terminal
+TIME_DIFF.SDCL -- Find difference in hours and minutes of two times

@@ -1,0 +1,275 @@
+procedure eve$dynamic_module_ident
+return '240816.110525';
+endprocedure
+
+procedure eve$parser_dispatch(the_command)
+local	status;
+
+    return (eve$process_command(the_command));
+
+endprocedure
+
+procedure eve$$pre_init_modules
+
+    eve$help_module_pre_init;
+    eve$internationalization_module_pre_init;
+
+endprocedure
+
+procedure eve$$init_modules
+
+    eve$build_module_init;
+    eve$options_module_init;
+    eve$constants_module_init;
+    eve$terminals_module_init;
+    eve$synonyms_module_init;
+    eve$decwindows_module_init;
+    eve$windows_module_init;
+    eve$file_module_init;
+    eve$parser_module_init;
+    eve$core_module_init;
+    eve$format_module_init;
+    eve$mouse_module_init;
+    eve$extend_module_init;
+    eve$edit_module_init;
+    eve$advanced_module_init;
+    eve$help_module_init;
+    eve$edt_module_init;
+    eve$extras_module_init;
+    eve$wps_module_init;
+    eve$show_module_init;
+    eve$wildcard_module_init;
+    eve$menus_module_init;
+    eve$internationalization_module_init;
+    rect_module_init;
+    match_module_init;
+    tww_encrypt_module_init;
+    tkb_module_init;
+
+endprocedure
+
+procedure eve$get_status_fields (the_length, the_format)
+
+local	remaining,
+	the_fields,
+	the_field;
+
+the_fields := "";
+remaining := the_length;
+
+the_field := eve$direction_status_field (remaining, the_format);
+if length (the_field) <= remaining
+then
+    the_fields := the_field + the_fields;
+    remaining := remaining - length (the_field);
+endif;
+
+the_field := eve$mode_status_field (remaining, the_format);
+if length (the_field) <= remaining
+then
+    the_fields := the_field + the_fields;
+    remaining := remaining - length (the_field);
+endif;
+
+the_field := eve$nowrite_status_field (remaining, the_format);
+if length (the_field) <= remaining
+then
+    the_fields := the_field + the_fields;
+    remaining := remaining - length (the_field);
+endif;
+
+the_field := margin_status_field (remaining, the_format);
+if length (the_field) <= remaining
+then
+    the_fields := the_field + the_fields;
+    remaining := remaining - length (the_field);
+endif;
+
+the_field := time_status_field (remaining, the_format);
+if length (the_field) <= remaining
+then
+    the_fields := the_field + the_fields;
+    remaining := remaining - length (the_field);
+endif;
+
+
+return the_fields
+
+endprocedure
+
+procedure eve$$init_all_synonyms
+
+eve$file_synonym_init;
+eve$format_synonym_init;
+eve$internationalization_synonym_init;
+
+endprocedure
+
+procedure eve$exit_dispatch
+
+    if eve$$extend_exit_handler
+    then
+        return;
+    endif;
+
+    eve$exit;
+
+endprocedure
+
+procedure eve$quit_dispatch
+
+    if eve$$extend_quit_handler
+    then
+        return;
+    endif;
+
+    eve$quit;
+
+endprocedure
+
+
+procedure eve$version
+    return 'TKB V00-001 2024-08-16 11:05';
+endprocedure
+
+procedure eve$$build_module_idents
+
+return ('EVE$BUILD_MODULE_IDENT ' +
+	'EVE$OPTIONS_MODULE_IDENT ' +
+	'EVE$CONSTANTS_MODULE_IDENT ' +
+	'EVE$TERMINALS_MODULE_IDENT ' +
+	'EVE$SYNONYMS_MODULE_IDENT ' +
+	'EVE$DECWINDOWS_MODULE_IDENT ' +
+	'EVE$WINDOWS_MODULE_IDENT ' +
+	'EVE$FILE_MODULE_IDENT ' +
+	'EVE$PARSER_MODULE_IDENT ' +
+	'EVE$CORE_MODULE_IDENT ' +
+	'EVE$FORMAT_MODULE_IDENT ' +
+	'EVE$MOUSE_MODULE_IDENT ' +
+	'EVE$EXTEND_MODULE_IDENT ' +
+	'EVE$EDIT_MODULE_IDENT ' +
+	'EVE$ADVANCED_MODULE_IDENT ' +
+	'EVE$HELP_MODULE_IDENT ' +
+	'EVE$EDT_MODULE_IDENT ' +
+	'EVE$EXTRAS_MODULE_IDENT ' +
+	'EVE$WPS_MODULE_IDENT ' +
+	'EVE$SHOW_MODULE_IDENT ' +
+	'EVE$WILDCARD_MODULE_IDENT ' +
+	'EVE$MENUS_MODULE_IDENT ' +
+	'EVE$INTERNATIONALIZATION_MODULE_IDENT ' +
+	'EVE$DYNAMIC_MODULE_IDENT ' +
+	'EVEPLUS_KERNEL_MODULE_IDENT ' +
+	'MATCH_MODULE_IDENT ' +
+	'TWW_EVE_ENCRYPTION_MODULE_IDENT ' +
+	'TKB_MODULE_IDENT ' +
+	'EVE$DYNAMIC_MODULE_IDENT ' + 
+	'');
+
+endprocedure;
+
+procedure eve$$build_parser_flags
+
+return ('');
+
+endprocedure;
+
+procedure eve$$build_module_pre_inits
+
+return ('EVE$HELP_MODULE_PRE_INIT ' +
+	'EVE$INTERNATIONALIZATION_MODULE_PRE_INIT ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_module_inits
+
+return ('EVE$BUILD_MODULE_INIT ' +
+	'EVE$OPTIONS_MODULE_INIT ' +
+	'EVE$CONSTANTS_MODULE_INIT ' +
+	'EVE$TERMINALS_MODULE_INIT ' +
+	'EVE$SYNONYMS_MODULE_INIT ' +
+	'EVE$DECWINDOWS_MODULE_INIT ' +
+	'EVE$WINDOWS_MODULE_INIT ' +
+	'EVE$FILE_MODULE_INIT ' +
+	'EVE$PARSER_MODULE_INIT ' +
+	'EVE$CORE_MODULE_INIT ' +
+	'EVE$FORMAT_MODULE_INIT ' +
+	'EVE$MOUSE_MODULE_INIT ' +
+	'EVE$EXTEND_MODULE_INIT ' +
+	'EVE$EDIT_MODULE_INIT ' +
+	'EVE$ADVANCED_MODULE_INIT ' +
+	'EVE$HELP_MODULE_INIT ' +
+	'EVE$EDT_MODULE_INIT ' +
+	'EVE$EXTRAS_MODULE_INIT ' +
+	'EVE$WPS_MODULE_INIT ' +
+	'EVE$SHOW_MODULE_INIT ' +
+	'EVE$WILDCARD_MODULE_INIT ' +
+	'EVE$MENUS_MODULE_INIT ' +
+	'EVE$INTERNATIONALIZATION_MODULE_INIT ' +
+	'RECT_MODULE_INIT ' +
+	'MATCH_MODULE_INIT ' +
+	'TWW_ENCRYPT_MODULE_INIT ' +
+	'TKB_MODULE_INIT ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_declare_synonyms
+
+return ('EVE$FILE_DECLARE_SYNONYM ' +
+	'EVE$FORMAT_DECLARE_SYNONYM ' +
+	'EVE$INTERNATIONALIZATION_DECLARE_SYNONYM ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_synonym_inits
+
+return ('EVE$FILE_SYNONYM_INIT ' +
+	'EVE$FORMAT_SYNONYM_INIT ' +
+	'EVE$INTERNATIONALIZATION_SYNONYM_INIT ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_status_fields
+
+return ('EVE$DIRECTION_STATUS_FIELD ' +
+	'EVE$MODE_STATUS_FIELD ' +
+	'EVE$NOWRITE_STATUS_FIELD ' +
+	'MARGIN_STATUS_FIELD ' +
+	'TIME_STATUS_FIELD ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_exit_handlers
+
+return ('EVE$$EXTEND_EXIT_HANDLER ' +
+	'');
+
+endprocedure;
+
+procedure eve$$build_quit_handlers
+
+return ('EVE$$EXTEND_QUIT_HANDLER ' +
+	'');
+
+endprocedure;
+
+
+procedure eve$$restore_settings
+
+eve$$x_gold_keys := create_array ();
+eve$$x_do_key_array := create_array ();
+
+eve$$x_gold_keys {'EVE$EDT_KEYS'} := PF1;
+eve$$x_gold_keys {'keypad'} := 'EVE$EDT_KEYS';
+eve$$x_do_key_array {'EVE$EDT_KEYS'} := 'GOLD-KP7 ';
+eve$$x_do_key_array {'EVE$NUMERIC_KEYS'} := 'PF4 ';
+eve$$x_do_key_array {'EVE$STANDARD_KEYS'} := 'DO ';
+eve$$x_do_key_array {'EVE$USER_KEYS'} := 'GOLD-D ';
+eve$$x_do_key_array {'EVE$VT100_KEYS'} := 'PF4 ';
+eve$$x_do_key_array {'EVE$WPS_KEYS'} := 'GOLD-[ ';
+endprocedure
+

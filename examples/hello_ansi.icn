@@ -1,0 +1,8 @@
+link ansi
+
+procedure main ()
+  ED ()
+  CUP (10, 10)
+  writes ("Hello!")
+  reads ()
+end # main

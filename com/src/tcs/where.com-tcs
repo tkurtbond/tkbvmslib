@@ -1,0 +1,9 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:33 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ where = f$environment("PROCEDURE")
+$ where = f$parse(where,,, "DEVICE") + f$parse(where,,, "DIRECTORY")
+$ set def 'where'
+%%E 1

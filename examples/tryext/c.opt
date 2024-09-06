@@ -1,0 +1,3 @@
+gnu_cc:[000000]gcclib.olb/lib
+gnu_cc:[000000]liberty.olb/lib
+sys$library:vaxcrtl.olb/lib

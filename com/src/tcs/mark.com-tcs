@@ -1,0 +1,38 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:28 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$	verify_on = 'f$verify(0)'
+$!
+$!----------------------------------------------------------------------------!
+$!
+$!	Program:			M A R K
+$!	By:				C. Paul Bond
+$!	Version:			2.00a
+$!	Date:				6-19-86
+$!
+$!	Description:
+$!	    Mark is a command file that defines a logical, specified
+$!	by the user, as the current directory spec.  This permits
+$!	the user to make logicals so that they may find there way back
+$!	to this directory without any problems.  The logical to be created
+$!	is passed in p1.
+$!
+$!
+$!	History:
+$!  Date   Who	 What
+$! ????85  CPB	 Initial version.
+$! 061986  cpb   removed from Comm.com
+$!
+$!----------------------------------------------------------------------------!
+$!> MARK.COM -- Define the current directory as a logical
+$!
+$	marker = p1
+$	directory = f$parse("",,,"device") + f$directory()
+$	if marker .nes. "" then goto mrk1
+$	inquire marker "Mark ''directory' as"
+$	if marker .eqs. "" then exit (1 .or. (f$verify(verify_on) .and. 0))
+$ mrk1: assign 'directory' 'marker'
+$	exit (1 .or. (f$verify(verify_on) .and. 0))
+%%E 1

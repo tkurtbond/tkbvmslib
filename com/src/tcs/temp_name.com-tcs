@@ -1,0 +1,10 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:31 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$! Make a temp file name
+$ time = f$cvtime("") - "-" - "-" - " " - ":" - ":" - "."
+$ pid = f$getjpi("","PID")
+$ tmp = "CHK" + time + "_" + pid + "." + "TMP"
+%%E 1

@@ -1,0 +1,33 @@
+%%s 2/2/16
+%%d D 1.2 23-Aug-24 11:17:03 tkb 2 1
+%%c Write error message if there is no translation for the DCL symbol.
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:51 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+### ICONENV.ICN - Get values from environment variables
+
+## The first argument should be a symbol and the second should be a
+## logical name.
+##
+## If run in TKB's account,
+##     iconx iconenv gcc_setup "MPL$DATA"
+## should prove adequate.
+
+procedure main (args)
+  local symbolname, logicalname
+
+  symbolname := args[1]
+  logicalname := args[2]
+
+%%D 2
+  write (getenv (symbolname))
+  write (getenv (logicalname) | ("No value for logical name " || logicalname) )
+%%E 2
+%%I 2
+  write (getenv (symbolname) | ("No value for DCL symbol " || symbolname))
+  write (getenv (logicalname) | ("No value for logical name " || logicalname))
+%%E 2
+end # main
+%%E 1

@@ -1,0 +1,167 @@
+
+
+             A Multi-Purpose String Editing Function
+                    (Similar to DCL's F$EDIT)
+                    which can be Added to 3GLs
+                          or DATATRIEVE.
+
+                         Bart Z. Lederman
+                   System Resources Corporation
+                          Burlington, MA
+
+
+    I have often wanted to process a line of text in a program or
+ DATATRIEVE procedure. In DCL, there is a useful lexical function
+ F$EDIT which can convert a string to upper case, remove trailing
+ blanks, convert multiple blank spaces and tabs to a single blank
+ space, and other functions: and it can do all of those functions
+ simultaneously. It was frustrating that there wasn't an
+ equivalent LIB$ or STR$ function.
+
+    Since I don't normally use VAX BASIC, it was only by accident
+ (while looking through someone else's program) that I discovered
+ that such a function is provided in VAX BASIC. What is even
+ better is that it is in the BASIC Run-Time Library BASRTL.EXE,
+ which is supplied with the VAX/VMS operating system. This means
+ that everyone has it: you don't have to buy VAX BASIC to use the
+ function.
+
+    Since I don't use VAX BASIC, I wanted to make the function
+ available in VAX C. The file BAS$EDIT.H provides the necessary
+ definitions.  Any or all of the qualifiers in the header file can
+ be "ORed" together.
+
+    To demonstrate what this function can do, I wrote a simple
+ demonstration program, BAS$EDIT.C  When you run this program,
+ you should see this (if the 8-bit characters came through o.k.):
+
+
+This string   has stuff         ïn it
+THIS STRING HAS STUFF ÏN IT
+Thisstringhasstuffonit
+
+
+    I also wrote TEST_BAS_EDIT.C which runs through all of the
+ possible permutations of editing functions.
+
+    All this is very well and good for 3GL programmers, but what
+ about DATATRIEVE? Anyone who has seen my articles in the past
+ knows that it's very easy to add RTL functions to DATATRIEVE. I
+ added the following to my DTRFNDnnn.MAR file:
+
+; FN$BAS_EDIT - process a character string with BAS$EDIT
+;                                                       B. Z. Lederman
+; output is a one character string
+; input is an unsigned byte ASCII code
+;
+        .LINK   "SYS$SHARE:BASRTL.EXE"/SHAREABLE
+
+$DTR$FUN_DEF FN$BAS_EDIT, BAS$EDIT, 3
+    $DTR$FUN_NOOPTIMIZE
+    $DTR$FUN_HEADER  HDR = <"Edited">
+    $DTR$FUN_EDIT_STRING ^\T(80)\
+    $DTR$FUN_OUT_ARG  TYPE = FUN$K_STATUS
+    $DTR$FUN_IN_ARG  TYPE = FUN$K_TEXT, OUT_PUT = TRUE, ALL_LEN = 255
+    $DTR$FUN_IN_ARG  TYPE = FUN$K_DESC, DTYPE = DSC$K_DTYPE_T, ORDER = 1, ALL_L
+EN = 255
+    $DTR$FUN_IN_ARG  TYPE = FUN$K_VALUE, DTYPE = DSC$K_DTYPE_L, ORDER = 2
+$DTR$FUN_END_DEF
+
+    To use this you have to do what BASIC programmers do, and put
+ in the numeric value of the editing function. This is because you
+ can't add new keywords to DATATRIEVE to give symbolic values for
+ the editing functions. You can, however, DECLARE a local variable
+ and give it the value of the editing function you want.
+
+    An example of how this function works is:
+
+PROCEDURE TEST_BAS_EDIT
+!
+DECLARE EDIT_VALUE USAGE LONG.
+!
+EDIT_VALUE = 0
+!
+! embedded Line Feed                     V        V eight-bit character
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 0) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 1) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 2) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 4) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 8) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 16) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 32) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 64) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 128) | "<"
+PRINT FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", 256) | "<"
+!
+PRINT SKIP
+!
+WHILE EDIT_VALUE LE 512 BEGIN
+  PRINT EDIT_VALUE, SPACE 1,
+    FN$BAS_EDIT (" This string  [has]
+stuff ïn it ", EDIT_VALUE) | "<"
+  EDIT_VALUE = EDIT_VALUE + 1
+END
+!
+END_PROCEDURE
+
+    Part of what this looks like when you run it follows (I'm not
+ going  to print all 512 possible variations here):
+
+:test_bas_edit
+ This string  [has]
+                    stuff ïn <
+ This string  [has]
+                        stuff on <
+Thisstring[has]
+               stuffïnit<
+ This string  [has]     stuff ïn i<
+This string  [has]
+stuff ïn i<
+ This string [has]
+                   stuff ïn i<
+ THIS STRING  [HAS]
+                        STUFF ÏN <
+ This string  (has)
+                        stuff ïn <
+ This string  [has]
+                        stuff ïn <
+ This string  [has]
+                        stuff ïn <
+
+   EDIT
+   VALUE
+
+          0  This string  [has]
+                                stuff ïn <
+          1  This string  [has]
+                                stuff on <
+          2 Thisstring[has]
+                           stuffïnit<
+          3 Thisstring[has]
+                           stuffonit<
+          4  This string  [has] stuff ïn i<
+          5  This string  [has] stuff on i<
+          6 Thisstring[has]stuffïnit<
+          7 Thisstring[has]stuffonit<
+
+and so on.
+
+    I belive this function will be most useful in two areas. The
+ first is when data is read in from a text or "free-format" file
+ and has to be processed to be stored into a domain. The other is
+ when the user is prompted for input: the function can be used to
+ "normalize" input (uniform case, no extra spaces or tabs, etc.)
+ to make it easier to look for words or commands within the input
+ string.
+
+

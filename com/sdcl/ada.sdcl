@@ -1,0 +1,185 @@
+###############################################################################
+##                      
+## Program:        A D A . S D C L
+## Written By:     Thomas Kurt Bond
+## Version:        1.00b
+## Date:           15-Jan-1987
+##
+## Description:	This command procedure eases the compile and bind steps
+## of the TSADA Ada compiler from TeleSoft.  Install by setting up a DCL
+## symbol to point to the compiled version of this file (Since this is written
+## in SDCL), such as 
+##
+##   $ ada :== dev:[directory]ada.com
+##
+## Syntax: ada [-option...] [filespec]
+##
+## Where command is the command used to invoke the command procedure,
+## [] indicates an optional item, and ... indicates a repeatable item.
+## See the initialization section at the end of this com file for a list
+## of the commands and what they do.
+##
+## Parameters:
+##    filespec => one or more file specifications, seperated by commas
+##                or plus signs.  DO NOT include the file type in these
+##                file specifications.  If you concate files using commas,
+##                you CANNOT use plus signs to concate, and vice versa.
+##
+## Valid Options:       
+##    -batch 		=> submit to batch
+##    -bind[=name]	=> bind a procedure. Prompts if name omitted.
+##    -debug 		=> compile and bind with debug switch
+##    -list[=filespec] 	=> make listing
+##    -test[~]          => turns on/off the debugging mode of this program.
+##
+##	History:
+##  Ver     When    Who  What
+##  1.00a   011587  tkb  First Version
+##  1.00b   011987  tkb  Change -bind so if file omitted, default bind name
+##                       is the same as file name part of file specification.
+##  2.0     051989  tkb  Change to new SDCL syntax
+###############################################################################
+   verifying = 'f$verify(f$type(ada_verify) .nes. "")'
+   !> ADA.SDCL -- compile & bind at term or batch for TSADA 
+   ##Set up global constants
+   true  = (1 .eq. 1)
+   false = .not. true
+   wso   := write sys$output 
+   inq   := inquire/nopun
+   debug = false
+   
+   ##Valid Options List (in uppercase because dcl upcases command line)
+   opt_list = "/BATCH/BIND/DEBUG/LIST/TESTING/"
+   opt_list_len = f$length(opt_list)
+   
+   ##Set up default options
+   batch_mode = false
+   do_bind    = false
+   comp_opt   = ""
+   bind_opt   = ""
+   bind_name  = ""
+                   
+   i = 1
+   ##Process options till none left
+   while (f$extract(0, 1, p'i') .eqs. "-") {
+      opt = p'i'
+      which = f$extract(1, 3, opt)
+      ok = (f$locate("/" + which, opt_list) .ne. opt_list_len) .and. \
+           (which .nes. "")
+      if (ok) 
+         gosub OPT$'which'
+      else
+         write sys$output "Invalid Option: ''opt'"
+      i = i + 1
+   }
+   
+   ##No more options, do p'i' is the filename
+   comp_file = p'i'
+   
+   ##Deal with omitted file name
+   if (comp_file .eqs. "") comp_file = f$trnlnm("EDIT_FILE")
+   if (comp_file .eqs. "") inq comp_file "_File: "
+   if (comp_file .eqs. "") exit (1 .or. (f$verify(verifying) .and. 0))
+
+   
+   ##Deal with omitted bind name, -bind was specified
+   if (do_bind .and. bind_name .eqs. "") {
+      temp = f$parse(comp_file, , , "name")
+      inq bind_name "_Bind Name <''temp'>: "
+      if (bind_name .eqs. "") 
+         bind_name = temp
+   }
+   
+   ##Save the current directory so can put log file here
+   cur_dir = f$environment("default")
+
+   ##Get name field of file spec, use as name field of .tmp and .log
+   file_name = f$parse(comp_file, , , "name")
+   out_file  = file_name + ".tmp_" + f$getjpi("", "pid")
+   log_file  = cur_dir + file_name + ".log"
+   
+   ##Open and write the command file that will do the compile
+
+   ##double quote, use to put in quoted stings, since sdcl can't
+   ##parse strings correctly. (doesn't handle """" constructions properly)
+  
+   dq[0,8] = 34 			#An ascii double quote
+   ddq = f$extract(0,1,dq)
+   dq = ddq + ddq
+   open/write f 'out_file'                                           
+   write f "$ ! TSADA Batch compile by TKB"
+   write f "$ ! Time: ''f$time()'"
+   write f "$ on control_y then goto the_end"
+   write f "$ on error then goto the_end"
+   write f "$ set def ''cur_dir'"                                       
+   write f "$ write sys$output ''dq'Starting: ''dq', f$time()"
+   write f "$ write sys$output ''dq'Compiling ''comp_file' ''dq'"
+   write f "$ tsada/vms''comp_opt' ''comp_file'"
+   if (.not. do_bind) goto skip_bind
+   write f "$ write sys$output ''dq'Binding   ''bind_name' ''dq'"
+   write f "$ tsada/bind''bind_opt' ''bind_name'"
+skip_bind:
+   write f "$ !"
+   write f "$ the_end:"
+   write f "$ delete/nolog ''out_file';*"
+   write f "$ write sys$output ''dq'Finished: ''dq', f$time()"
+   write f "$ !"
+   close f
+
+   ##Build the command to execute
+   if (batch_mode)
+      com_line = "submit/noprint/notify/log=" + log_file + " " + out_file
+   else
+      com_line = "@" + out_file
+
+   ##Execute or send it off to batch
+   if (.not. debug) 'com_line'
+
+The_End:
+   exit (1 .or. (f$verify(verifying) .and. 0))
+
+###############################################################################
+###     Subroutines
+###############################################################################
+
+### The following subroutines deal with the parsing of the options
+### specified on the command line.
+
+##Batch option
+OPT$bat:
+   batch_mode = true
+   return
+
+##Bind option
+OPT$bin:
+   if (f$locate("~", opt) .ne. f$length(opt)) {
+      do_bind = false
+      return
+   }
+   do_bind = true
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l) 
+      bind_name = f$extract(p + 1, l, opt)
+   return
+                                             
+##Debug Option
+OPT$deb:
+   comp_opt = comp_opt + "/debug"
+   bind_opt = bind_opt + "/debug"
+   return
+
+##List option
+OPT$lis:
+   comp_opt = comp_opt + "/list"
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l) 
+      comp_opt = comp_opt + f$extract(p, l, opt)
+   return
+
+##Test option
+OPT$tes:
+   if (f$locate("~", opt) .ne. f$length(opt)) debug = false
+   else debug = true
+   return

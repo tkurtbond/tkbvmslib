@@ -1,0 +1,66 @@
+        wso := write sys$output
+        wse := write sys$error
+
+        QUI$M_JOB_ABORTING = %x00000001
+        QUI$M_JOB_EXECUTING = %x00000002
+        QUI$M_JOB_HOLDING = %x00000004
+        QUI$M_JOB_INACCESSIBLE = %x00000008
+        QUI$M_JOB_REFUSED = %x00000010
+        QUI$M_JOB_REQUEUE = %x00000020
+        QUI$M_JOB_RESTARTING = %x00000040
+        QUI$M_JOB_RETAINED = %x00000080
+        QUI$M_JOB_STARTING = %x00000100
+        QUI$M_JOB_TIMED_RELEASE = %x00000200
+        QUI$M_JOB_SUSPENDED = %x00000400
+        QUI$M_JOB_PENDING = %x00000800
+        QUI$M_JOB_UNDEFINED = %x00001000
+        QUI$M_JOB_STALLED = %x00002000
+        QUI$M_JOB_INCOMPLETE = %x00004000
+        QUI$M_JOB_COMPLETING = %x00008000
+        QUI$S_JOB_STATUS = 4
+
+
+        batch_queue = "*"
+       	temp = f$getqui ("")            # clear getqui context
+        repeat {
+            queue_name = f$getqui ("DISPLAY_QUEUE", "QUEUE_NAME", batch_queue, "BATCH,WILDCARD")
+            if (queue_name .eqs. "") break
+
+            repeat {
+                noaccess = f$getqui("DISPLAY_JOB","JOB_INACCESSIBLE",,"ALL_JOBS")
+                if (noaccess .eqs. "") break 
+                job_name = f$getqui ("DISPLAY_JOB", "JOB_NAME",, "FREEZE_CONTEXT")
+                job_entry = f$getqui ("DISPLAY_JOB", "ENTRY_NUMBER",, "FREEZE_CONTEXT")
+
+                job_status = f$getqui ("DISPLAY_JOB", "JOB_STATUS",, "FREEZE_CONTEXT")
+                job_status_string = "unknown"
+                if (job_status .eq. QUI$M_JOB_ABORTING) job_status_string = "aborting"
+                if (job_status .eq. QUI$M_JOB_EXECUTING) job_status_string = "executing"
+                if (job_status .eq. QUI$M_JOB_HOLDING) job_status_string = "holding"
+                if (job_status .eq. QUI$M_JOB_INACCESSIBLE) job_status_string = "inaccessible"
+                if (job_status .eq. QUI$M_JOB_REFUSED) job_status_string = "refused"
+                if (job_status .eq. QUI$M_JOB_REQUEUE) job_status_string = "requeue"
+                if (job_status .eq. QUI$M_JOB_RESTARTING) job_status_string = "restarting"
+                if (job_status .eq. QUI$M_JOB_RETAINED) job_status_string = "retained"
+                if (job_status .eq. QUI$M_JOB_STARTING) job_status_string = "starting"
+                if (job_status .eq. QUI$M_JOB_TIMED_RELEASE) job_status_string = "timed_release"
+                if (job_status .eq. QUI$M_JOB_SUSPENDED) job_status_string = "suspended"
+                if (job_status .eq. QUI$M_JOB_PENDING) job_status_string = "pending"
+                if (job_status .eq. QUI$M_JOB_UNDEFINED) job_status_string = "undefined"
+                if (job_status .eq. QUI$M_JOB_STALLED) job_status_string = "stalled"
+                if (job_status .eq. QUI$M_JOB_INCOMPLETE) job_status_string = "incomplete"
+                if (job_status .eq. QUI$M_JOB_COMPLETING) job_status_string = "completing"
+
+                job_holding = f$getqui ("DISPLAY_JOB", "JOB_HOLDING",, "FREEZE_CONTEXT")
+                after_time = f$getqui ("DISPLAY_JOB", "AFTER_TIME",, "FREEZE_CONTEXT")
+                job_owner = f$getqui ("DISPLAY_JOB", "USERNAME",, "FREEZE_CONTEXT")
+                job_note = f$getqui ("DISPLAY_JOB", "NOTE",, "FREEZE_CONTEXT")
+
+                # wso queue_name, " ", job_entry, " ", job_owner, "  ", job_name, " ", job_status_string, " ", job_holding, " ", after_time, " ", job_note
+                if (job_status .eq. QUI$M_JOB_TIMED_RELEASE) time = after_time
+                else time = ""
+                wso f$fao ("!15<!AS!>!14<!AS!>!12<!SL!>!40<!AS!>!15<!AS!>!25<!AS!>", queue_name, job_owner, job_entry, job_name, job_status_string, time)
+            }
+                
+        }
+

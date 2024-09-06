@@ -1,0 +1,90 @@
+!-*-indented-text-*-  Yes, I use emacs to edit this.
+procedure suspend_resume_hook
+    local fn, fnpat, i, j, x;
+
+    fn := create_array;
+    fnpat := file_parse("KEPTEVEARG"); 	
+    x := file_search("");		!end any old search
+    i := 0;
+    !The following has to be two loops, despite the fact it would be simpler
+    !as one loop, because we are using `file_search()' to get all the files
+    !(since `KEPTEVEARG' might be a wildcarded file name), and
+    !`eve_get_file()' apparently uses `file_search()' too, which totally
+    !screws up our search.  I think allowing a parameter for a search context
+    !would help.
+    loop
+	i := i + 1;
+        fn{i} := file_search(fnpat);
+	exitif fn{i} = "";
+    endloop;
+    i := i - 1;				!always one extra
+    j := 1;
+    loop
+	exitif j > i;
+        eve_get_file(fn{j});
+	j := j + 1;
+    endloop;
+endprocedure ! suspend_resume_hook
+
+
+
+!+++
+! The following routine was copied from EVE$ADVANCED.TPU, with the addition of 
+! one line to call `suspend_resume_hook'.  A safer way to do this might be to 
+! define a command `eve_kept_attach' which would call `eve_attach()' and do
+! the call to `suspend_resume_hook' after it returns from the attach.  That way
+! we don't have to worry about the compatibility issues of redefining EVE's
+! own command.
+!---
+
+! EVE$ADVANCED.TPU 							Page 4
+
+! Attach back to the parent process.  Used when Eve is spawned from DCL
+! and run in a subprocess ("kept Eve").  The VAXTPU attach command can
+! be used for more flexible process control.
+
+procedure eve_attach (; the_process)		! Attach to another process
+
+on_error
+    [TPU$_NOPARENT]:
+!%IF eve$x_option_decwindows
+!%THEN
+	if eve$x_decwindows_active
+	then
+	    eve$popup_message (message_text (EVE$_NOSUBPROC, 1));
+	else
+	    eve$message (EVE$_NOSUBPROC);
+	endif;
+!%ELSE
+!%	eve$message (EVE$_NOSUBPROC);
+!%ENDIF
+	eve$learn_abort;
+	return (FALSE);
+    [OTHERWISE]:
+endon_error;
+
+!%IF eve$x_option_decwindows
+!%THEN
+    if eve$x_decwindows_active
+    then
+	eve$message (EVE$_NODECWCMD, 0, "ATTACH");
+	return (FALSE);
+    endif;
+!%ENDIF
+
+eve$clear_message;		! Clear out old message
+if the_process = ""
+then
+    attach;
+else
+    attach (the_process);
+endif;
+!%IF eve$x_option_evej
+!%THEN
+!% evej$cnv_done := 1;
+!%ENDIF
+
+suspend_resume_hook;
+
+return (TRUE);
+endprocedure;

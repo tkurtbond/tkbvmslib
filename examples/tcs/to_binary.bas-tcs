@@ -1,0 +1,15 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:52 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+function string to_binary (long n)
+    option type = explicit, constant type = integer, &
+        size = integer long, size = real double 
+
+    external long function lib$extzv
+    declare long i, string result
+
+    result = result + str$(lib$extzv(i, 1, n)) for i = 31 to 0 step -1
+end function result ! to_binary
+%%E 1

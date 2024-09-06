@@ -1,0 +1,26 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:50 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+(define (upcase s)
+  (let* ((s (if (symbol? s) (symbol->string s) s))
+         (l (string-length s))
+         (t (make-string l)))
+    (do ((i 0 (+ i 1)))
+        ((= i l) t)
+      (let* ((c (string-ref s i))
+             (c (if (char-lower-case? c) (char-upcase c) c)))
+        (string-set! t i c)))))
+
+
+(define (downcase s)
+  (let* ((s (if (symbol? s) (symbol->string s) s))
+         (l (string-length s))
+         (t (make-string l)))
+    (do ((i 0 (+ i 1)))
+        ((= i l) t)
+      (let* ((c (string-ref s i))
+             (c (if (char-upper-case? c) (char-downcase c) c)))
+        (string-set! t i c)))))
+%%E 1

@@ -1,0 +1,10 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:33 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ write sys$output "Start: ", f$cvtime ()
+$ wait 'p1
+$ write sys$output "Wake:  ", f$cvtime ()
+$ loop -wait=0:0:15 scream
+%%E 1

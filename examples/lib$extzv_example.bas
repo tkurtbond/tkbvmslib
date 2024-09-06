@@ -1,0 +1,18 @@
+10      ! http://odl.sysworks.biz/disk$vaxdocjun002/opsys/vmsos721/5841/5841pro_019.html
+	EXTERNAL LONG FUNCTION &
+                OTS$CVT_TZ_L (string, long), ! Convert hex text to LONG &
+                LIB$EXTZV               ! Extract zero-ended bit field 
+ 
+20      OPEN "TT:" FOR INPUT AS FILE #1%     ! Open terminal as a file 
+        INPUT #1%, "HEX>"; HEXIN$            ! Prompt for input 
+        STAT%=OTS$CVT_TZ_L(HEXIN$, BINARY%)   ! Convert to longword 
+        IF (STAT% AND 1%) <> 1%               ! Failed? 
+        THEN 
+                PRINT "Conversion failed, decimal status ";STAT% 
+                GO TO 20                      ! Try again 
+        ELSE 
+                PRINT HEXIN$, 
+                PRINT STR$(LIB$EXTZV(N%, 1%, BINARY%)); &
+                        FOR N%=31% to 0% STEP -1% 
+		print
+		PRINT STR$(LIB$EXTZV(4%, 2%, BINARY%))

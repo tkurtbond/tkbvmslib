@@ -1,0 +1,79 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:39:56 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+verifying = 'f$verify(f$type(showalldevfiles_verify) .nes. "")'
+!> SHOWOPENFILES.SDCL -- Show open files on all devices or user specified devices
+
+inhibit_message = %x10000000
+
+opt_list = "/HELP/OUTPUT/"
+opt_list_len = f$length (opt_list)
+
+for (i = 1; f$extract(0, 1, p'i') .eqs. "-"); i = i + 1) {
+    opt = p'i'
+    if ((opt .eqs. "-?") .or. (opt .eqs. "-H")) out = "-HELP"
+    which = f$extract(1, 3, opt)
+    ok = (f$locate("/" + which, opt_list) .ne. opt_list_len) .and. \
+         (which .nes. "")
+    if (ok) 
+        gosub OPT$'which'
+    else
+        write sys$output "Invalid Option: ''opt'"
+}
+
+if (p'i' .eqs. "") {
+    ## Show all the files open on all the devices.
+    repeat {
+        device_name = f$device (, "DISK")
+        if (device_name .eqs. "") break
+        if (.not. f$getdvi (device_name, "MNT")) next
+        show dev/files  'device_name'
+    }
+} else {
+    ## Show the files open on the user specified devices.
+    for (; p'i' .nes. ""; i = i + 1) {
+        len = f$length (p'i')
+        if (f$locate (",", p'i') .nes. len) {
+            wse "Found a comma-separated list"
+            for (j = 0; f$element (j, ",", p'i') .nes. ","; j = j + 1) {
+                dev = f$element (j, ",", p'i') 
+                wse "Trying element ", j, " device ", dev
+                show dev/files 'dev'
+            }
+        } else {
+            show dev/files &p'i'
+        }
+    }
+}
+
+the_end:
+    exit (1 .or. (f$verify(verifying) .and. 0))
+
+
+
+#Help option
+OPT$hel:
+    goto usage
+
+
+#Output option 
+OPT$out:
+    return
+
+usage:
+    copy sys$input sys$error
+    // usage: showalldevfiles [-option...] [devspecs ...]
+    //
+    // Where [] indicates an optional item, and ... indicates a repeatable item.
+    // See the initialization section at the end of this com file for a list
+    // of the commands and what they do.
+    //
+    // Parameters:
+    //    devspecs => one or more device specifications, seperated by commas.
+    //
+    // Valid Options:       
+    //    -output=FILENAME         Write output to FILENAME
+    exit (2 .or. inhibit_message .or. (f$verify(verifying) .and. 0))   
+%%E 1

@@ -1,0 +1,59 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:48:16 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+!> TIME_DIFF.SDCL -- Find difference in hours and minutes of two times
+    ##Set up some useful abreviations and constants
+    TRUE = (1 .eq. 1)
+    FALSE = .not. TRUE
+    wso = "write sys$output"
+    get = "read sys$command"
+
+    ##loop until no more information to get from user
+    last_end_time    = ""	#init saved data to null
+    last_description = ""
+    for (get start_time /prompt="Start Time:  ";
+	 start_time .nes. "";
+	 get start_time /prompt="Start Time:  ")
+    {
+	start_time = f$edit(start_time, "compress")
+        if (start_time .eqs. "=") {
+	    start_time = last_end_time
+	    wso "        Start Time is: ", start_time
+	}
+
+	##get times and descriptions from user
+	get end_time    /prompt="End Time:    "
+	end_time = f$edit(end_time, "compress")
+	last_end_time = end_time
+
+	##figure out duration
+	st_len = f$length(start_time)
+	et_len = f$length(end_time)
+	i = f$locate(".", start_time)
+	if (i .ne. st_len) start_time[i*8, 8] = 58 #ascii value of ":"
+	j = f$locate(".", end_time)
+	if (j .ne. et_len) end_time[j*8, 8] = 58 #ascii value of ":"
+	i = f$locate(":", start_time)
+	j = f$locate(":", end_time)
+
+	st_hours = f$integer(f$extract(0, i, start_time))
+	st_minutes = f$integer(f$extract(i+1, st_len, start_time))
+	et_hours = f$integer(f$extract(0, j, end_time))
+        if (et_hours .lt. st_hours) 
+            et_hours = et_hours + 12    #fix so 3:30 - 12:30 => 4:00
+	et_minutes = f$integer(f$extract(j+1, et_len, end_time))
+	temp_dur = ((et_hours * 60) + et_minutes) \
+		 - ((st_hours * 60) + st_minutes)
+        duration = f$fao("!ZL:!2ZL", temp_dur / 60, \
+	    temp_dur - ((temp_dur / 60) * 60))
+
+	##format and write line
+	write sys$output f$fao("Duration:    !AS", duration)
+    }
+
+The_End:
+    exit
+
+%%E 1

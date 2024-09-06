@@ -1,0 +1,69 @@
+%%s 1/1/33
+%%d D 1.3 16-Aug-24 08:58:09 tkb 3 2
+%%c Make the target of the rules.genmms be install-program instead of install.
+%%s 5/5/29
+%%d D 1.2 14-Aug-24 11:43:35 tkb 2 1
+%%c Whitespace changes.
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 15:05:49 tkb 1 0
+%%c Initial checkin.
+%%c Generate various .GENMMS files to work with two state DESCIP.MMS in COM_SRC:.
+%%T
+%%I 1
+$!> TOLIST.COM - Generate files with the PROGRAMS variable and the install target.
+$       num_filenames = 0
+$       open /read f programs.dat
+$ 10$:
+$       read/end_of_file=19$ f filename
+$       num_filenames = num_filenames + 1
+$       fn_list_'num_filenames' = filename
+$       goto 10$
+$ 19$:
+$       close f
+$       open /write prog programs.genmms
+$       write prog "PROGRAMS= -"
+$       open /write inst install.genmms
+%%D 3
+$       write inst "install : -"
+%%E 3
+%%I 3
+$       write inst "install-programs : -"
+%%E 3
+$       open/write rule rules.genmms
+$       open/write clean clean.genmms
+$       write clean "clean-programs : "
+$       i = 1
+$ 20$:
+$       if i .gt. num_filenames then goto 29$
+%%D 2
+$       write prog  "	 ", fn_list_'i', " -"
+$       write inst  "	 [-]", fn_list_'i', " -"
+%%E 2
+%%I 2
+$       write prog  "    ", fn_list_'i', " -"
+$       write inst  "    [-]", fn_list_'i', " -"
+%%E 2
+$       write rule  "[-]", fn_list_'i', " : ", fn_list_'i'
+%%D 2
+$       write rule  "	 copy /log $(MMS$SOURCE) $(MMS$TARGET)"
+%%E 2
+%%I 2
+$       write rule  "    copy /log $(MMS$SOURCE) $(MMS$TARGET)"
+%%E 2
+$       write clean "    - delete/log ", fn_list_'i', ";*"
+$       i = i + 1
+$       goto 20$
+$ 29$:
+%%D 2
+$       write prog "	", "! end of programs"
+$       write inst "	", "! end of install
+%%E 2
+%%I 2
+$       write prog  "    ", "! end of programs"
+$       write inst  "    ", "! end of install
+%%E 2
+$       close prog
+$       close inst
+$       close rule
+$       close clean
+%%E 1

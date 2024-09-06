@@ -1,0 +1,18 @@
+### ICONENV.ICN - Get values from environment variables
+
+## The first argument should be a symbol and the second should be a
+## logical name.
+##
+## If run in TKB's account,
+##     iconx iconenv gcc_setup "MPL$DATA"
+## should prove adequate.
+
+procedure main (args)
+  local symbolname, logicalname
+
+  symbolname := args[1]
+  logicalname := args[2]
+
+  write (getenv (symbolname) | ("No value for DCL symbol " || symbolname))
+  write (getenv (logicalname) | ("No value for logical name " || logicalname))
+end # main

@@ -1,0 +1,17 @@
+procedure process_file (file)
+  while line := read (file) do
+    write (line[1:4])
+end # process_file
+
+procedure main (arguments)
+  local infile, line
+
+  if *arguments = 0 then 
+    process_file (&input)
+  else
+    every filename := !arguments do {
+      infile := open (filename, "r") | stop ("first3: unable to open \"" || filename || "\".")
+      process_file (infile)
+      close (infile)
+    }
+end # main

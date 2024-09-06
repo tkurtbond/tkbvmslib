@@ -1,0 +1,21 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:49 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+#include <stdio.h>
+#include <stdlib.h>
+
+
+int
+main (int argc, char **argv)
+{
+  int i;
+
+  printf ("Note that the VAX C RTL downcases all the arguments to C programs.\n");
+  for (i = 0; i < argc; i++)
+    printf ("%s\n", argv[i]);
+
+  exit (EXIT_SUCCESS);
+}
+%%E 1

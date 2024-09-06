@@ -1,0 +1,7 @@
+procedure tkb_try_module_ident
+    return "V0.0";
+endprocedure ! tkb_try_module_ident
+
+procedure tkb_try_module_init
+    message ("tkb_try_module_init");
+endprocedure ! tkb_try_module_ident

@@ -1,0 +1,333 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:31:48 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+#############################################################################
+##                                                                         ##
+##	Program:	N O T E S . S D C L                                ##
+##	By:		C. Paul Bond                                       ##
+##	Date:		Jan 17, 1986                                       ##
+##	Version:        2.10a                                              ##
+##                                                                         ##
+##  Description:                                                           ##
+##	The notes program is writen in s-DCL.  A 'C' like preprocessor for ##
+##	normal DCL.  Notes alows the user to work with a text library like ##
+##	it was a database to hold text.  The module name is used as the    ##
+##	primary (and only) key.  The primary key (module name) may be any  ##
+##	normal DCL symbol name of up to 32 (I think it may be more but I   ##
+##	am not sure).  							   ##
+##                                                                         ##
+##  Command Line Parameters:						   ##
+##      FILLER			- So can use qualifiers immed. after the   ##
+##				  command that invokes NOTES               ##
+##	LIBRARY			- Text library to use as the database      ##
+##                                                                         ##
+##  Command Line Qualifiers:						   ##
+##                                                                         ##
+#############################################################################
+##									   ##
+##   ver    who     date      why					   ##
+##  -----   ---   --------    ------------------------------------------   ##
+##  1.00a   RMD   ??/??/??    Initial Development			   ##
+##  2.00a   CPB   01/17/86    Rewriten into s-DCL, Command line parsing    ##
+##  2.10a   CPB   03/02/86    Added checking for invaliad paramaters,      ##
+##			      more control y traping, cleaned up structure ##
+##  3.00a   TKB   09/17/86    Rewrite for VMS 4.4, add different editors   ##
+##  3.00b   TKB   09/14/89    Change to new SDCL syntax.                   ##
+#############################################################################
+!> NOTES.SDCL -- Text library manager. 
+! ver 3.00b, See NOTES.SDCL for more info. Notes library.
+
+
+##
+#########################
+##      Constants      ##
+#########################
+
+#set noon
+on control_y then exit			#set up control y trap 
+on error then exit			#set up first error trap 
+true = (1 .eq. 1)			#value for true 
+false = .not. true			#value for false 
+debug = false				#debuging flag 
+commands = "|ADD|DELETE|MODIFY|VIEW|EXTRACT|LIST|EXIT|HELP"
+length_commands = f$length(commands)	#total lenght of all commands 
+temp_file = "tmp$$$$11.tmp"		#a temp file used for misc things 
+display :== write sys$output		#output to the command line 
+
+if (debug) display f$fao("P1: !AS!/P2: !AS!/P3: !AS!/", p1, p2, p3)
+
+##Get options and library file name
+if (f$extract(0, 1, p2) .eqs. "/") 
+   library = p3 + p3
+else 
+   library = p2 + p3
+pos = f$locate("/", library)
+options = f$extract(pos, f$length(library), library)
+library = f$extract(0, pos, library)
+if (debug) display f$fao("Library: !AS!/Options: !AS!/", library, options)
+if (library .eqs. "") library = f$trnlnm("notes$file")
+while (library .eqs. "") inquire library "_Data Base File"
+library = f$parse(library, , , "name")
+if (debug) display f$fao("Library: !AS!/Options: !AS!/", library, options)
+define/nolog notes$file 'library'
+if (f$search(library + ".tlb") .eqs. "") {
+  inquire ans "Create a new library <YES>"
+  if (ans .or. (ans .eqs. "")) {
+    lib/cre/text 'library'
+  } else {
+    exit
+  }
+}
+if (f$locate("/EDT", options) .ne. f$length(options)) 
+  editor = "edit/edt"
+else
+  editor = "edit/tpu/section=eve$dir:eve_edt.gbl"
+
+##	Display info message only if not entering via command line.
+if (p2 .eqs "") {
+  display ""
+  display ""
+  display "For more information type HELP."
+  display ""
+}
+
+##
+#####################################
+##                                 ##
+##        M A I N   B O D Y        ##
+##                                 ##
+#####################################
+exit_flag = false
+while (.not. exit_flag) {
+  main_loop:
+  on error then goto main_loop
+  on control_y then goto main_loop
+  display ""
+  inquire cmd "Option"
+  if (cmd .eqs. "") cmd = "HELP"	#if command blank then display help 
+
+  if (f$extract(0, 1, cmd) .eqs. "$") {
+    ##	Perform a dcl command
+    assign/user_mode sys$command sys$input
+    'f$extract(1, f$length(cmd), cmd)'
+  } else {
+    ##  Parse for a NOTES command
+    pram = f$extract(f$locate(" ", cmd), f$length(cmd), cmd)
+    cmd = cmd - pram
+    pram = f$edit(pram, "collapse")
+    qual = f$extract(f$locate("/", cmd), f$lenght(cmd), cmd)
+    cmd = cmd - qual
+    pram = pram + qual
+    qual = f$extract(f$locate("/", pram), f$length(pram), pram)
+    pram = pram - qual
+
+    qual_len = f$lenght(qual)
+
+    i = f$locate("|" + cmd, commands)	#look for the command 
+    if (i .eq. length_commands) {
+      display "Invaliad command \''cmd'\."
+    } else {				#end if not valiad command 
+      label = f$extract(i + 1, length_commands, commands)
+      label = f$extract(0, f$locate("|", label), label)
+      gosub cmd$'label'
+    }					#end else valiad command 
+  }					#end else not a dcl command 
+}					#end while not exit 
+exit
+
+
+
+
+##
+#############################
+##	LIST               ##
+#############################
+CMD$list:
+lib/list/text 'library
+return
+
+
+
+
+
+
+#############################
+##	ADD		   ##
+#############################
+CMD$add:
+
+##	Prompt for key and return if none.
+if (pram .eqs. "") {
+  inquire pram "Key name to insert"
+  if (pram .eqs. "") return
+}
+
+##	Get file qualifier.  
+i = f$locate("/FI", qual)
+if (i .eqs. qual_len) {
+  assign/user_mode sys$command sys$input
+  'editor' 'temp_file'
+  file = temp_file
+} else {
+  t = f$extract(i, qual_len, qual)
+  t = f$extract(f$locate("/", t), f$length(t), t)
+  file = f$extract(f$locate("=", t) + 1, f$length(t), t)
+  if (file .eqs. "") {
+    display "File qualifier must have a file name."
+    return
+  }
+}
+
+lib/insert/replace/text 'library' 'file'/module='pram'
+
+if (file .eqs. temp_file) delete/nolog 'temp_file';*
+return
+
+
+
+
+
+##
+#############################
+##	DELETE 		   ##
+#############################
+CMD$delete:
+
+##	Prompt for key name if none.  Return of none given.
+if (pram .eqs. "") {
+  inquire pram "Key name to delete"
+  if (pram .eqs. "") return
+}
+
+lib/text/delete='pram' 'library'
+return
+
+
+
+
+
+
+#############################
+##	MODIFY		   ##
+#############################
+CMD$modify:
+
+##	Prompt for key to modify if none given. 
+##	If none input then return.
+if (pram .eqs. "") {
+  inquire pram "Key name to modify"
+  if (pram .eqs. "") return
+}
+
+##	Perform the update.
+lib/text/extract='pram'/output='temp_file' 'library'
+assign/user_mode sys$command sys$input
+'editor' 'temp_file'
+lib/text/insert/replace 'library' 'temp_file'/module='pram'
+delete/nolog 'temp_file';*
+return
+
+
+
+
+
+##
+#############################
+##	VIEW		   ##
+#############################
+CMD$view:
+
+if (pram .eqs. "") {
+    inquire pram "Key name to view"
+    if (pram .eqs. "") return
+}
+
+lib/text/extract='pram'/output='temp_file' 'library'
+type/page 'temp_file'
+delete/nolog 'temp_file';*
+return
+
+
+
+
+
+
+#############################
+##	EXTRACT		   ##
+#############################
+CMD$extract:
+
+if (pram .eqs. "") {
+  inquire pram "Key to extract"
+  if (pram .eqs. "") return		#exit if no key 
+}
+
+i = f$locate("/OU", qual)		#look for output qualifier 
+if (i .eqs. qual_len) {
+  inquire file "Output file"		#ask for needed output qual 
+  if (file .eqs. "") return		#return if no file name 
+} else {
+  t = f$extract(i, qual_len, qual)	#extract file name 
+  t = f$extract(f$locate("/", t), f$length(t), t)
+  file = f$extract(f$locate("=", t) + 1, f$length(t), t)
+  if (file .eqs. "") {
+    display "File qualifier must have a file name."
+    return				#return because no file 
+  }
+}
+
+lib/text/extract='pram'/output='file' 'library'
+return
+
+
+
+
+
+
+##
+#############################
+##	HELP		   ##
+#############################
+CMD$help:
+
+type sys$input
+//
+//
+//
+// Commands:
+//
+// ADD <key_name>/FILE=<input_file>              - Insert an new entry
+// DELETE <key_name>                             - Remove an entry
+// MODIFY <key_name>                             - Make changes to an entry
+// VIEW <key_name>                               - Look at an entry
+// EXTRACT <key_name>/OUTPUT=<output_file>       - Copy an entry to a file
+// LIST                                          - List all current entrys
+// EXIT                                          - Exit the the program
+// HELP                                          - Display this message
+// $<dcl-command>                                - Perform a dcl command
+//
+// <key_name> must start with and leter and be compose of leters,
+//     numbers and underscores.  It may be no longer then 39 characters.
+//     <key_name> is used to lookup the record once it is in the data base.
+// <input_file> is a file to be read.  It must be a normal dcl file name.
+//     No wild card are suported.
+// <output_file> is a file that will be written. It must be specified in
+//     the same manner as <input_file>.
+// <dcl-command> may be any normal dcl command.
+//
+return
+
+
+
+
+
+
+#############################
+##	EXIT		   ##
+#############################
+CMD$exit:
+exit_flag = true
+return
+%%E 1

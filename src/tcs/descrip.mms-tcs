@@ -1,0 +1,158 @@
+%%s 7/0/83
+%%d D 1.5 22-Aug-24 15:16:41 tkb 5 4
+%%c Add rule for building DATEDIFF.EXE, now that it depends on DATETIME_CLI.OBJ.
+%%s 5/2/78
+%%d D 1.4 22-Aug-24 13:17:02 tkb 4 3
+%%c Add DATEDIFF.EXE to programs to build and install.
+%%s 6/3/74
+%%d D 1.3 21-Aug-24 13:09:45 tkb 3 2
+%%c Compile lltoa.c with debug on for lltoa.obj and lltoa_test.exe.
+%%c Compile strtoll.c with debug on for strtoll_test.obj.
+%%s 7/4/70
+%%d D 1.2 16-Aug-24 15:13:09 tkb 2 1
+%%c Add betags to programs to be built and installed by default.
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 16:12:19 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+.IFDEF DBG
+XCFLAGS=/DEBUG/NOOPT
+XLINKFLAGS=/DEBUG/MAP
+.ENDIF
+
+
+%%I 2
+.SUFFIXES : .icn .icx .u1 .u2
+
+%%E 2
+all : miscutils.olb first3.icx uniq.icx echo.exe sizes.exe lltoa_test.exe strtoll_test.exe percent.exe scream.exe lc.exe dclsubstitute.exe -
+%%D 2
+	uptime.exe tovar.exe lc.exe
+%%E 2
+%%I 2
+%%D 4
+	uptime.exe tovar.exe lc.exe betags.icx
+%%E 4
+%%E 2
+%%I 4
+	uptime.exe tovar.exe lc.exe betags.icx datediff.exe
+%%E 4
+
+%%D 2
+install : exe_lib:scream.exe exe_lib:lc.exe exe_lib:tovar.exe exe_lib:uptime.exe
+%%E 2
+%%I 2
+%%D 4
+install : exe_lib:scream.exe exe_lib:lc.exe exe_lib:tovar.exe exe_lib:uptime.exe exe_lib:betags.icx
+%%E 4
+%%E 2
+%%I 4
+install : exe_lib:scream.exe exe_lib:lc.exe exe_lib:tovar.exe exe_lib:uptime.exe exe_lib:betags.icx exe_lib:datediff.exe
+%%E 4
+public : ml:percent.exe 
+
+%%D 2
+.SUFFIXES : .icn .icx .u1 .u2
+
+%%E 2
+CC=GCC
+
+!.C$(OBJ) :
+!    $(CC)$(CFLAGS)$(XCFLAGS) $(MMS$SOURCE)
+
+
+lltoa_test.obj : lltoa.c
+%%D 3
+    $(CC)/define="TEST"/nolist/object=$(MMS$TARGET) $(MMS$SOURCE)
+%%E 3
+%%I 3
+    $(CC)/define="TEST"/noopt/debugnolist/object=$(MMS$TARGET) $(MMS$SOURCE)
+%%E 3
+
+%%I 3
+lltoa.obj : lltoa.c
+    $(CC)/noopt/debug/nolist/object=$(MMS$TARGET) $(MMS$SOURCE)
+
+%%E 3
+lltoa_test.exe : lltoa_test.obj
+    $(LINK)/EXE=$(MMS$TARGET) $(MMS$SOURCE), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxcrtl.olb/lib
+
+strtoll_test.obj : strtoll.c
+%%D 3
+    $(CC)/define="TEST"/nolist/object=$(MMS$TARGET) $(MMS$SOURCE)
+%%E 3
+%%I 3
+    $(CC)/define="TEST"/nolist/noopt/debug/object=$(MMS$TARGET) $(MMS$SOURCE)
+%%E 3
+
+strtoll_test.exe : strtoll_test.obj, lltoa.obj
+%%D 3
+    $(LINK)/EXE=$(MMS$TARGET) $(MMS$SOURCE_LIST), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxcrtl.olb/lib
+%%E 3
+%%I 3
+    $(LINK)/EXE=$(MMS$TARGET)/debug $(MMS$SOURCE_LIST), gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxcrtl.olb/lib
+%%E 3
+
+%%I 5
+datediff.exe : datediff.obj, datediff_cli.obj
+    $(LINK)/EXE=$(MMS$TARGET) $(MMS$SOURCE_LIST)
+
+!------------------------------------------------------------------------------
+! Install targets
+!------------------------------------------------------------------------------
+
+%%E 5
+ml:percent.exe : percent.exe
+    copy/log $(MMS$SOURCE) $(MMS$TARGET)
+
+exe_lib:scream.exe : scream.exe
+    copy/log $(MMS$SOURCE) $(MMS$TARGET)
+
+exe_lib:tovar.exe : tovar.exe
+    copy/log $< $@
+
+exe_lib:uptime.exe : uptime.exe
+    copy/log $< $@
+
+%%I 2
+exe_lib:betags.icx : betags.icx
+    copy/log $< $@
+
+%%E 2
+%%I 4
+exe_lib:datediff.exe : datediff.exe
+    copy/log $< $@
+
+%%E 4
+miscutils.olb : miscutils(getopt), miscutils(ioinit)
+        library/list $(MMS$TARGET)
+
+!------------------------------------------------------------------------------
+! Rules
+!------------------------------------------------------------------------------
+
+.c.exe :
+    $(CC)$(CFLAGS)$(XCFLAGS) $(MMS$SOURCE)
+    $(LINK)/EXE=$(MMS$TARGET)$(XLINKFLAGS) $(MMS$SOURCE:.C=.OBJ), lib_src:miscutils.olb/lib, gnu_cc:[000000]gcclib.olb/lib, gnu_cc:[000000]liberty.olb/lib, sys$library:vaxcrtl.olb/lib
+
+.bas.exe :
+    $(BASIC)$(BASFLAGS)$(XBASFLAGS) $(MMS$SOURCE)
+    $(LINK)$(XLINKFLAGS)/EXE=$(MMS$TARGET) $(MMS$SOURCE:.BAS=.OBJ)
+
+.mar.exe :
+    $(MACRO)$(MFLAGS)$(XMFLAGS) $(MMS$SOURCE)
+    $(LINK)$(XLINKFLAGS)/EXE=$(MMS$TARGET) $(MMS$SOURCE:.MAR=.OBJ)
+
+.icn.icx :
+    icont $<
+
+cleanl :
+        delete lc.exe.*, lc.obj.*/log
+
+exe_lib:lc.exe : lc.exe
+        copy/log $(MMS$SOURCE) $(MMS$TARGET)
+
+clean :
+        - delete/log  *.exe.*, *.obj.*, *.map.*, *.lis.*, *.icx.*, *.u1.*, *.u2.*
+%%E 1

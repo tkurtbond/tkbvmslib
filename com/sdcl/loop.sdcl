@@ -1,0 +1,114 @@
+###############################################################################
+# 
+# Program:   	L O O P . S D C L
+# Written By:	Thomas Kurt Bond
+#
+# Description:	
+# 
+# LOOP.SDCL executes a DCL command repeatedly, either for a fixed number of 
+# times or infintely.  It can optionally wait a user-specified amount of time
+# between executions of the command.
+#
+# Parameters:
+#    ?		Usage message
+#
+# Valid Options:
+#    -wait=<delta-time>
+#    		Wait <delta-time> between commands
+#    -limit=<number-of-repititions>
+#    		Perform command <number-of-repititions> times then stop.
+#		If omitted, value is assumed to be infinite.
+#
+# History:
+# Ver     When    Who  What
+# 1.00    ??????  tkb  Original Version, in DCL
+# 2.00    090788  tkb  Change to SDCL, add -limit, -wait
+# 3.0     052289  tkb  Change to new SDCL syntax, add verify handling
+###############################################################################
+   verifying = 'f$verify(f$type(loop_verify) .nes. "")'
+   !> LOOP.SDCL -- execute a command repeatedly
+   ##Useful constants 
+   TRUE	= (1 .eq. 1)
+   FALSE = .not. TRUE
+
+   ##If first parameter is `?' print usage 
+   if (p1 .eqs. "?")
+      goto Usage
+
+   ##Set up to handle options 
+   opt_list = "/LIM/WAI/" 
+   opt_list_len = f$length(opt_list)
+
+   ##Set up default options 
+   islimit = FALSE
+   iswait = FALSE
+   
+   ##Options always come first 
+   i = 1
+   ##Process options till none left 
+   while (f$extract(0, 1, p'i') .eqs. "-") {
+      opt = p'i'
+      which = f$extract(1, 3, opt)
+      ok = (f$locate("/" + which, opt_list) .ne. opt_list_len) \
+           .and. (which .nes. "")
+      if (ok) 
+         gosub OPT$'which'
+      else
+         write sys$output "Invalid Option: ''opt'"
+      i = i + 1
+   }
+   
+   ##No more options, so p'i' is the command 
+   command = p'i'
+   ##Deal with omitted command 
+   if (command .eqs. "") {
+      inquire/nopun command "Command: "
+      if (command .eqs. "")
+         goto The_End
+   }
+
+   ##Actually do the command, looping until time to exit 
+   repeat {
+      'command'
+      if (islimit) {
+         limit_counter = limit_counter + 1
+         if (limit_counter .ge. limit)
+	    break
+      }
+      if (iswait) {
+         wait 'delta_time'
+      }
+   }
+The_End:
+   exit (1 .or. (f$verify(verifying) .and. 0))
+
+Usage:
+   write sys$output "usage: loop [-wait[=delta-time]] [-limit[=repetitions]] dcl-command"
+   exit (1 .or. (f$verify(verifying) .and. 0))
+
+
+
+###The following subroutines deal with the parsing of the options
+###specified on the command line.
+
+###Limit option 
+OPT$lim:
+   islimit = true
+   limit_counter = 0
+   limit = 10				#Default limit 
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l)
+      limit = f$integer(f$extract(p+1, l, opt))
+   return
+
+###Wait option 
+OPT$wai:
+   iswait = true
+   delta_time = "00:05:00.00"		#Default delta time 
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l)
+      delta_time = f$extract(p+1, l, opt)
+   return
+

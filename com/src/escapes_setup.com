@@ -1,0 +1,79 @@
+$!> ESCAPES_SETUP.COM -- Set up escape sequences for vt100
+$!
+$!	FILE:ESC.COM
+$!	DIR:[SYSMGR]
+$!
+$!	DESCRIPTION:
+$!	Command file to set up escape sequences for VT100
+$!
+$!
+$!	DATA FILE(S):
+$!
+$!	AUXILLARY FILE(S):
+$!
+$!	SUBSYSTEM:
+$!
+$! Created By: RANDY MCGEE
+$!
+$! MODIFIED BY:Scott C. Shreiner, Ph.D  DATE:July 1983
+$!
+$! Description: Cleanup and File Identification
+$!
+$!
+$!
+$!
+$	ESC[0,8]==27			!SYMBOL FOR AN ESCAPE
+$!
+$       ESX[0,8]=155
+$!
+$	EOL:=="''ESC'K"		!TO END OF LINE
+$	BOL:=="''ESC'o"		!FROM BEGINING OF LINE
+$	EL:=="''ESC'l"		!ENTIRE LINE
+$	EOS:=="''ESC'J"		!TO END OF SCREEN
+$	BOS:=="''ESC'b"		!FROM BEGINING OF SCREEN
+$	ES:=="''ESX'J"		!ENTIRE SCREEN
+$!
+$!
+$!  LINE/SCREEN SIZE/WIDTH
+$!
+$	DHT:==" "		!DOUBLE HEIGHT (TOP)
+$	DHB:==" "		!DOUBLE HEIGHT (BOTTOM)
+$	DW:==" "			!DOUBLE WIDTH LINE
+$	SW:==" "			!SINGLE WIDTH LINE
+$	SR0324:==" "	!SET SCROLLING REGION (TOP=LINE 3)
+$	SRNORMAL:==" "		!SET SCROLLING REGION TO DEFAULT
+$!
+$!  CURSOR POSITIONING
+$!
+$	CU:=="''ESC'A"		!CURSOR UP
+$	CD:=="''ESC'B"		!CURSOR DOWN
+$	CF:=="''ESC'C"		!CURSOR FORWARD (RIGHT)
+$	CB:=="''ESC'D"		!CURSOR BACK (LEFT)
+$	HOM:=="''ESC'H"		!CURSOR HOME
+$	SC:=="''ESC'j"			!SAVE CURSOR AND attributesS
+$	RC:=="''ESC'k"			!RESTORE CURSOR AND ATTRIBUTES
+$!
+$! SELECT GRAPHIC RENDITION
+$!
+$	REV:=="''ESC'[7m"		!REVERSE VIDEO
+$	REV[24,8]==%O155
+$	BLI:=="''ESC'[5m"		!Blinking display
+$	BOL:=="''ESC'[1m"		!Bold video
+$	NORM:=="''ESC'[0m"		!NORMAL (STANDARD)
+$	NORM[24,8]==%O155
+$!
+$! SET UP OF SYMBOLS
+$!
+$	REVERSE :== WRITE SYS$OUTPUT REV
+$	BLINK   :== WRITE SYS$OUTPUT BLI
+$	BOLD    :== WRITE SYS$OUTPUT BOL
+$ 	NORMAL	:== WRITE SYS$OUTPUT NORM
+$       DOUBLET :== WRITE SYS$OUTPUT DHT
+$	DOUBLEB :== WRITE SYS$OUTPUT DHB
+$	DOUBLE  :== WRITE SYS$OUTPUT DW
+$	SINGLE  :== WRITE SYS$OUTPUT SW
+$!
+$!
+$!
+$	EXIT
+

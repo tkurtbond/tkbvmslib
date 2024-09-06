@@ -1,0 +1,566 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 11:55:01 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+###############################################################################
+## 
+##      Program:        C O M P I L E R . S D C L
+##      Written By:     Thomas Kurt Bond
+##      Version:        3.02a
+##      Date:           12-Sep-1986
+##
+## Description: This command procedure allows the user to easily
+## compile and link a program with one command, either interactively at
+## the terminal or sending it off to a batch queue.  This command procedure
+## is based on COMP.COM, a DCL command procedure written by C. Paul Bond.
+##
+## To use this file, run it through the SDCL preprocessor to produce 
+## COMPILER.COM and include one of the the following in your login.com:
+##                                                                  
+## $ @dev:[dir]compiler.com initialize       ! to keep objects
+## $ @dev:[dir]compiler.com initialize -obj~ ! to delete objects
+## 
+## This sets up the dcl symbols to invoke it with the various compilers.
+##
+## A description of interactive use is at the end.
+##############################################################################
+##      History:
+##   Ver     When      Who  What
+##   1.00a   ??????    cpb  Original Version
+##   2.xxx   ??????    tkb  modifications
+##   3.00a   ??????    tkb  new commands and new step for c link
+##   3.01a   100586    tkb  make work with qual on command: "ccc/list quad2"
+##   3.01b   110586    tkb  fix so works with /debug
+##   3.02a   110586    tkb  rewrite in sdcl.
+##   4.00a   110586    tkb  rewrite to add unix-like options, which allows easier
+##                          addition and parsing of options.
+##   4.01a   120386    tkb  fix so handles both plus and comma concatenated
+##                          file lists.
+##   4.02    100988    tkb  Add -queue option
+##   5.0     051989    tkb  Change to new SDCL syntax and add verify handling
+##   5.1   20081117    tkb  Add GCC, version 2.7.1: what am I doing in 1995(sob!)
+##   5.2   20081118    tkb  Add -help and Usage
+##   5.3   20090305    tkb  GCC needs /noopt to be useful when using /debug;
+##                          add -setdebug option.
+##   5.4   20090318    tkb  Add arguments to -run.
+##                          Make INITIALIZE data driven.
+##                          Add -show option to show defined DCL symbols.
+##                          Add -check (age) option.
+##   5.5   2009-08-18  tkb  Add sdcl
+##   5.5   2022-03-30  tkb  Add -h and -?, document -help.
+###############################################################################
+   verifying = 'f$verify(f$type(compiler_verify) .nes. "")'
+   !> COMPILER.SDCL -- compile and link at terminal or batch.
+   inhibit_message = %x10000000
+   if (p1 .eqs. "INITIALIZE") 
+      goto comp_file_setup		#setup routine, init DCL commands 
+   ##Set up global constants 
+   TRUE  = (1 .eq. 1)
+   FALSE = .not. TRUE
+   wso   := write sys$output 
+   inq   := inquire/nopun
+   debug = FALSE
+   
+   ##Valid Options List (in uppercase because dcl upcases command line) 
+   opt_list = "/ARGS/BATCH/CCLINK/CHECK/CMP/COM/DEBUG/HELP/" \
+	    + "LINK/LIST/LNK/MAP/OBJECT/QUEUE/RND/RUN/SETDEBUG/" \
+	    + "SHOW/SKIP/TESTING/"
+   opt_list_len = f$length(opt_list)
+   
+   ##Set up default options 
+   batch_mode	 = FALSE
+   batch_opt	 = ""			#not currently used
+   do_run	 = FALSE
+   run_args	 = ""
+   do_run_debug  = ""
+   queue_opt	 = ""			#currently used only by the -queue opt
+   del_com       = TRUE
+   del_obj	 = FALSE
+   do_link	 = TRUE
+   comp_opt	 = ""
+   link_opt	 = "/nomap"
+   link_file2	 = ""
+   compiler	 = p1
+   skip_compile  = FALSE
+   setdebug_opt  = FALSE
+   check_age	 = FALSE
+   sdcl_compile  = FALSE
+
+   queue_name = f$trnlnm("DMS$DEF_BATCH")
+   if (queue_name .nes. "")
+       queue_opt = "/queue=" + queue_name
+                   
+   ##Determine if need to link with C shareable library 
+   if (compiler .eqs. "CC") {
+       c_compile = TRUE
+       gcc_compile = FALSE
+   } else if (compiler .eqs. "GCC") {
+       gcc_compile = TRUE
+       c_compile = FALSE  
+   } else {
+       c_compile = FALSE
+       gcc_compile = FALSE
+       if (compiler .eqs. "SDCL") {
+          sdcl_compile = TRUE
+	  do_link = FALSE
+	  del_obj = FALSE
+       }
+   }
+   
+   ##Options always start after the compiler 
+   i = 2
+   ##Process options till none left 
+   while (f$extract(0, 1, p'i') .eqs. "-") {
+      opt = p'i'
+      if ((opt .eqs. "-?") .or. (opt .eqs. "-H")) opt = "-HELP"
+      which = f$extract(1, 3, opt)
+      ok = (f$locate("/" + which, opt_list) .ne. opt_list_len) .and. \
+           (which .nes. "")
+      if (ok) 
+         gosub OPT$'which'
+      else
+         write sys$output "Invalid Option: ''opt'"
+      i = i + 1
+   }
+   
+   ##No more options, do p'i' is the filename 
+   comp_file = p'i'
+   ##Deal with omitted file name 
+   if (comp_file .eqs. "") comp_file = f$trnlnm("EDIT_FILE")
+   if (comp_file .eqs. "") inq comp_file "_File: "
+   if (comp_file .eqs. "") exit (1 .or. (f$verify(verifying) .and. 0))
+   ##Write out options 
+   if (debug) {
+      wso \
+        f$fao("Compiler: !AS!/Comp_file: !AS!/Comp_opt:  !AS!/Link_opt:  !AS",\
+        compiler, comp_file, comp_opt, link_opt)
+      wso f$fao("Link_file2: !AS", link_file2)
+      if (batch_mode) wso "Batch Mode"
+      else wso "Interactive"
+   }
+   
+   ##Check if someone tried to comma concate and plus concate both 
+   comma_pos = f$locate(",", comp_file)
+   plus_pos  = f$locate("+", comp_file)
+   len       = f$length(comp_file)
+   both      = (comma_pos .ne. len) .and. (plus_pos .ne. len)
+   if (both) {
+      wso "%COMPILE-F-BADCONCAT, can't use plus and comma file concatenators together"
+      exit (1 .or. (f$verify(verifying) .and. 0))
+   }
+
+   ##Save the current directory so can put log file here 
+   cur_dir = f$environment("default")
+
+   ##Get list of files to link. 
+   call parse_file_list $$$ 'comp_file' ".obj"
+   link_file = return$value
+   ##Get list of files to delete. 
+   call parse_file_list $$$ 'comp_file' ".obj;*"
+   delete_file = return$value
+   ##Get name field of first file spec, use as name field of .tmp and .log 
+   file_name = f$parse(f$element(0, ",", link_file),,, "name")
+   out_file  = file_name + ".tmp"
+   log_file  = cur_dir + file_name + ".log"
+
+   ##If the input files are concatenated with plus signs, the compiler
+   ##only produces one object file, with the same name as the first file 
+   ##name, so only link and delete that file. 
+   
+   if (f$locate("+", comp_file) .ne. f$length(comp_file)) {
+      link_file   = f$element(0, ",", link_file)
+      delete_file = f$element(0, ",", delete_file)
+   } 
+   
+   ##Open and write the command file that will do the compile 
+
+   ##double quote, use to put in quoted stings, since sdcl can't
+   ##parse strings correctly. (doesn't handle """" constructions properly)
+   
+   dq[0,8] = 34				#An ascii double quote 
+   ddq = f$extract(0,1,dq)
+   dq = ddq + ddq
+   open/write f 'out_file'                                           
+   write f "$ ! Batch compile by C. Paul Bond, modified by TKB"
+   write f "$ ! Time: ''f$time()'"
+   write f "$ on control_y then goto the_end"
+   write f "$ on error then goto the_end"
+   write f "$ set def ''cur_dir'"                                       
+   write f "$ write sys$output ''dq'Compiling ''comp_file' ''dq'"
+   if (.not. skip_compile)
+      write f "$ ''compiler'''comp_opt' ''comp_file'"
+   if (.not. do_link) goto skip_link                  
+##   if (del_obj) 
+##      write f "$ if f$search(''dq'''link_file'''dq') .eqs. ''dq'''dq' ",\
+##              "then goto the_end"
+
+   write f "$ write sys$output ''dq'Linking   ''link_file' ''dq'"
+   if (c_compile) {
+      write f "$ link ''link_file'''link_opt'''link_file2',sys$input/opt"
+      write f "sys$share:vaxcrtl.exe/share"
+      write f "$! Link with vaxc lib to reduce exe size"
+   } else if (gcc_compile) {
+      write f "$ link ''link_file'''link_opt'''link_file2',sys$input/opt"
+      write f "gnu_cc:[000000]gcclib.olb/lib"
+      write f "gnu_cc:[000000]liberty.olb/lib"
+      write f "sys$share:vaxcrtl.exe/share"
+      write f "$! Link with vaxc lib to reduce exe size"
+   } else {
+      write f "$ link ''link_file'''link_opt'''link_file2'"
+   }
+   exe_file = f$parse (".exe", link_file,,, "SYNTAX_ONLY")
+   if (setdebug_opt) {
+      write f "$ setdebug ", exe_file, " 0"
+   }
+   if (do_run) {
+      if (run_args .eqs. "")
+	 write f "$ run ", do_run_debug, " ", exe_file
+      else {
+         write f "$ cmd :== $", exe_file
+	 write f "$ cmd ", run_args
+      }
+   }
+   if (del_obj) {
+      write f "$ delete/nolog ''delete_file'"
+   }
+skip_link:
+   write f "$ !"
+   write f "$ the_end:"
+   if (del_com)
+      write f "$ delete/nolog ''out_file';*"
+   else
+      write sys$error "Temporary command ", out_file, " not deleted"
+   write f "$ !"
+   close f
+
+   ##Build the command to execute 
+   if (batch_mode)
+      com_line = "submit/noprint/notify/log=" + log_file \
+	       + queue_opt + batch_opt + " " + out_file
+   else
+      com_line = "@" + out_file
+
+   ##Execute or send it off to batch 
+   if (.not. debug) {
+      'com_line' ! 'f$verify(verifying)'
+      verifying = 'f$verify(f$type(compiler_verify) .nes. "")'
+   }
+   else
+      wso "com_line: ", com_line
+
+The_End:
+   exit (1 .or. (f$verify(verifying) .and. 0))
+
+###############################################################################
+### Subroutines
+###############################################################################
+
+
+### The following subroutines deal with the parsing of the options
+### specified on the command line.
+
+#Args option
+OPT$arg:
+   # not yet implemented
+   goto usage
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l)
+       args = f$extract(p+1, l, opt)
+   return
+
+#Batch option 
+OPT$bat:
+   batch_mode = TRUE
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l)
+       batch_opt = batch_opt + f$extract(p+1, l, opt)
+   return
+
+#Cclink option 
+OPT$ccl:
+   if (f$locate("~", opt) .ne. f$length(opt))
+      c_compile = FALSE
+      gcc_compile = FALSE # ?
+   return
+
+#Check option
+   check_age = TRUE
+   return
+
+#Com option
+OPT$com:
+   del_com = FALSE
+   return
+
+#Cmp option
+OPT$cmp:
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l) 
+      comp_opt = comp_opt + f$extract (p + 1, l, opt)
+   return
+   
+
+#Debug Option 
+OPT$deb:
+   comp_opt = comp_opt + "/debug"
+   if (gcc_compile) comp_opt = comp_opt + "/noopt"
+   link_opt = link_opt + "/debug"
+   return
+
+#Rnd Option
+OPT$rnd:
+   do_run = TRUE
+   do_run_debug = "/nodebug"
+   return
+
+#Run Option
+OPT$run:
+   do_run = TRUE
+   p = f$locate ("=", opt)
+   l = f$length (opt)
+   if (p .ne. l)
+      run_args = f$extract (p + 1, l, opt)
+      if (f$extract (0, 1, run_args) .eqs. """")
+	 run_args = f$extract (1, -1, run_args)
+      p = f$length (run_args)
+      if (f$extract (p - 1, 1, run_args) .eqs. """")
+         run_args = f$extract (0, p - 1, run_args)
+   return 
+
+#Help option
+OPT$hel:
+   goto usage
+
+
+#Link option 
+OPT$lin:
+   if (f$locate("~", opt) .ne. f$length(opt)) {
+      do_link = FALSE
+      return
+   }
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l) 
+      link_file2 = link_file2 + "," + f$extract(p + 1, l, opt)
+   return
+                                             
+#List option 
+OPT$lis:
+   comp_opt = comp_opt + "/list"
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l) 
+      comp_opt = comp_opt + f$extract(p, l, opt)
+   return
+
+#Map option 
+OPT$map:
+   link_opt = link_opt - "/nomap" + "/map"
+   return
+
+# Lnk option
+OPT$lnk:
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l) 
+      link_opt = link_opt + f$extract (p + 1, l, opt)
+   return
+
+#Object option 
+OPT$obj:
+   if (f$locate("~", opt) .ne. f$length(opt)) del_obj = TRUE
+   else del_obj = FALSE
+   return
+
+#Queue option 
+OPT$que:
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l) 
+      queue_opt = "/queue=" + f$extract(p + 1, l, opt)
+   return   
+
+#Setdebug option
+OPT$set:
+   if (f$locate("~",opt) .ne. f$length(opt)) setdebug_opt = FALSE
+   else setdebug_opt = TRUE
+   return
+
+#Show option
+OPT$sho:
+   gosub define_compilers
+   i = 0
+   max_len = 0
+   repeat {
+      element = f$element (i, "/", compiler_defs)
+      if (element .eqs. "/") break
+      compiler =    f$element (0, "~", element)
+      interactive = f$element (1, "~", element) - "*"
+      batch =       f$element (2, "~", element) - "*"
+      if (f$length (interactive) .gt. max_length)
+	 max_length = f$length (interactive)
+      if (f$length (batch) .gt. max_length)
+	 max_length = f$length (batch)
+   }
+   i = 0
+   repeat {
+      element = f$element (i, "/", compiler_defs)
+      if (element .eqs. "/") break
+      compiler =    f$element (0, "~", element)
+      ## f$type doesn't like abbrevs, so get rid of the asterisks.
+      interactive = f$element (1, "~", element) - "*"
+      batch =       f$element (2, "~", element) - "*"
+      if (f$type ('interactive') .nes. "") show sym 'interactive'
+      if (f$type ('batch') .nes. "")       show sym 'batch'
+      i = i + 1
+   }
+   ##Since only showing defined symbols, exit command procedure.
+   exit (1 .or. (f$verify(verifying) .and. 0))
+   ## Warning: No return from OPT$sho!!!!
+
+
+#Skip option
+OPT$ski:
+   skip_compile = TRUE
+   return
+
+#Test option 
+OPT$tes:
+   if (f$locate("~", opt) .ne. f$length(opt)) debug = FALSE
+   else debug = TRUE
+   return
+
+## Define the compilers we know about.  Information about different compilers
+## is separated by "/" and for each compiler we have the compiler name,
+## the symbol to invoke it interactively, and the symbol to invoke it in batch,
+## separarted by "~".
+##
+## We do this here as a gosub because both goto comp_file_setup and gosub
+## OPT$sho use it.
+define_compilers:
+   compiler_defs = "basic~cb*asic~bb*asic/cc~ccc~bcc/gcc~ccg~bcg/" \
+		 + "cobol~cco*bol~bco*bol/fortran~cf*ortran~bf*ortran/" \
+		 + "macro~cm*acro~bm*acro/pascal~cp*ascal~bp*ascal/" \
+		 + "sdcl~cs*dcl~bs*dcl"
+   return # from define_compilers
+
+## Set up the symbols to use this command procedure.
+## This section is only executed once, when intitializing,
+## and p1 will be INITIALIZE in that case.
+comp_file_setup:
+   if (f$trnlnm ("COMPILER_FILE") .eqs. "") {
+      proc = f$environment ("PROCEDURE")
+      proc = f$parse (";", proc,,) # default to current version
+      define compiler_file 'proc'
+   }
+
+   ##Check to see if user wants object files deleted or not 
+   if (p2 .eqs. "-OBJ~") del_obj_opt = " -obj~ "
+   else del_obj_opt = ""
+
+   gosub define_compilers
+   i = 0
+   repeat {
+      element = f$element (i, "/", compiler_defs)
+      if (element .eqs. "/") break
+      compiler =    f$element (0, "~", element)
+      interactive = f$element (1, "~", element)
+      batch =       f$element (2, "~", element)
+      'interactive :== @compiler_file 'compiler 'del_obj_opt
+      'batch       :== @compiler_file 'compiler 'del_obj_opt -batch
+      i = i + 1
+   }
+   
+   ##Since only an initialization, exit the command procedure 
+   exit (1 .or. (f$verify(verifying) .and. 0))
+   ## Warning: No return from comp_file_setup!!!!
+
+###############################################################################
+##
+##	subroutine: 	parse_file_list
+##
+##	Parameters:	file_list file_type ! to concat to files returned.
+##	Returns:	return$value ! a comma concated list of files.
+##
+##	Descritpion:	This subroutine takes a string containing a list
+## of file specifications concatenated with plus signs or commas, and returns a
+## comma concatenated list of the file names, optionally concatenating
+## a value to the end of each file name.
+##
+###############################################################################
+!@> parse_file_list - given list of files, returns file NAMES.
+parse_file_list: subroutine
+   ignore    = p1			#$$$, so /OPTION doesn't get DCL errors
+   file_list = p2
+   file_type = p3
+   name_list = ""
+   
+   do {
+      comma_pos = f$locate(",", file_list)
+      plus_pos  = f$locate("+", file_list)
+      len       = f$length(file_list)
+      if (comma_pos .lt. plus_pos) 
+         p = comma_pos
+      else
+         p = plus_pos
+      done = (p .eq. len)
+      name_list = name_list \
+                + f$parse( f$extract( 0, p, file_list), , , "name") \
+                + file_type + "," 
+      file_list = f$extract(p + 1, len, file_list)
+   } while (.not. done)
+   return$value == f$extract(0, f$length(name_list) - 1, name_list)
+
+endsubroutine				#parse_file_list 
+
+usage:
+   copy sys$input sys$error
+   // usage: command [-option...] [filespec]
+   //
+   // Where command is the command used to invoke the command procedure,
+   // [] indicates an optional item, and ... indicates a repeatable item.
+   // See the initialization section at the end of this com file for a list
+   // of the commands and what they do.
+   //
+   // Parameters:
+   //    filespec => one or more file specifications, seperated by commas
+   //                or plus signs.  DO NOT include the file type in these
+   //                file specifications.  If you concate files using commas,
+   //                you CANNOT use plus signs to concate, and vice versa.
+   //
+   // Valid Options:       
+   //    -batch[=options]         Submit to batch
+   //    -cclink[~]               Prevents linking with the c sharable library
+   //    -cmp="options"           Add compiler options
+   //    -com                     Keep the temporary command file
+   //    -debug                   Compile and link with debug switch
+   //    -h, -?, or -help         Display this message.
+   //    -link[~][=filespec,...]  Link with these object files 
+   //         [~]                 Don't link
+   //    -list[=filespec]         Make listing (doesn't work with gcc)
+   //    -lnk="options"           Add linker options
+   //    -map                     Produce a map on link step
+   //    -object[~]               Don't delete the object files
+   //                             [delete object files]
+   //    -queue=batchqueue        Submit on this batch queue
+   //    -rnd                     Run the resulting executable with /NODEBUG
+   //    -run[=args]              Run the resulting executable, optional with
+   //                             arguments  (Quote multiple args: ="a b c")
+   //    -setdebug                Turn off debug flag of executable
+   //    -show                    Show the define DCL symbols for invoking
+   //                             this program
+   //    -skip                    Skip compiling, just link
+   //    -test[~]                 turns on/off debug output for this program.
+   //
+   write sys$error "Set this up by doing @", f$env ("PROCEDURE"), " INITIALIZE"
+   exit (2 .or. inhibit_message .or. (f$verify(verifying) .and. 0))
+
+# Local Variables:
+# sdcl-continued-statement-offset: 3
+# sdcl-indent-level: 3
+# End:
+%%E 1

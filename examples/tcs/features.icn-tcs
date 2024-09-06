@@ -1,0 +1,9 @@
+%%s 0/0/0
+%%d D 1.1 21-Aug-24 13:34:38 tkb 1 0
+%%c Display all the values of &features.
+%%T
+%%I 1
+procedure main ()
+  every write (&features)
+end # main
+%%E 1

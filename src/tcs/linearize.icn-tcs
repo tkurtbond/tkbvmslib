@@ -1,0 +1,83 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 16:12:20 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+global inf
+procedure main (args)
+  if *args = 0 then
+    {
+      write ("zero args")
+      inf := &input
+    }
+  else if *args = 1 then
+    {
+      write ("one arg")
+      (inf := open (args[1], "r")) |
+	stop ("unable to open input file: ", args[1])
+    }
+  else
+    stop ("too many arguments!")
+
+  linearize ()
+end # main
+
+
+procedure linearize ()
+  local token
+  
+  while token := tokenize () do
+    {
+      if (*token > 0) & token[1:2] == "!" then
+	if token[*token:*token+1] ~== "!" then token ||:= "!"
+      if token == "&" then
+	{
+	  (token := tokenize ()) |
+	    (write (&errout,
+		   "something really weird with continuations happended") &
+	     fail)
+	  if token ~== "<EOL>" then fail
+	  next
+	}
+      if token == "<EOL>" then
+	{
+	  write ()
+	  next
+	}
+      writes (token, " ")
+	
+    }
+end # linearize
+
+
+procedure tokenize ()
+  static line
+  local token
+  if /line then
+    {
+      line := &null
+      (line := read (inf)) | fail
+    }
+  line ?:=
+    {
+      tab (many (' \t'))
+      tab (0)
+    }
+  if *line = 0 then
+    {
+      line := &null
+      return "<EOL>"
+    }
+  line ?:=
+    {
+      token :=
+	="&" |
+	(="!" || ((tab (upto ('!')) || move (1)) | tab (0))) |
+	tab (many (&digits)) |
+	tab (many (&letters)) |
+	("!Unknown lexical element: " || (move (1) | "(none)") || "!")
+      tab (0)
+    }
+  return token
+end # tokenize
+%%E 1

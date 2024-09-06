@@ -1,0 +1,34 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:29:51 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+!> ls.sdcl -- crude approximation for simple ls.
+verifying = 'f$verify(f$type(ls_verify) .nes. "")'
+# usage: ls [filespec ...]
+for (i = 1; p'i' .nes. ""; i = i + 1) {
+    filespec = p'i'
+    call do_dir "''filespec'"
+}
+if (i .eq. 1) {
+    # there was no filespec specified
+    call do_dir "*.*;0"
+}
+exit (1 .or. (f$verify(verifying) .and. 0))
+
+do_dir: subroutine
+    # p1 is a file spec.
+    filespec = p1
+    # write sys$error "filespec: ", filespec
+    old_pathname = ""
+    repeat {
+        pathname = f$search (filespec)
+        if (pathname .eqs. "") break
+        ## If you give f$search a filespec without any wildcards it ALWAYS
+        ## returns the pathname.
+        if (old_pathname .eqs. pathname) break
+        filename = f$edit (f$parse (pathname,,, "NAME") + f$parse (pathname,,, "TYPE"), "LOWERCASE")        
+        write sys$output filename
+    }
+endsubroutine # do_dir
+%%E 1

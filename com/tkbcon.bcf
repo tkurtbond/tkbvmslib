@@ -1,0 +1,84 @@
+$ !
+$ !     ******************************************
+$ !     *          P E G C O N . B C F           *
+$ !     *                                        *
+$ !     *Edit list to proofread my consulting rec*
+$ !     ******************************************
+$ !
+$ !
+$ ! Edit list to proof read my consulting recs
+$ !
+$ !
+$ !*********************************************************
+$ !                O U T L I N E
+$ !
+$ ! Run   Program          Remarks
+$ !O
+$ ! <1>   DMS:SORT         -Sort the recs by date choosing only mine
+$ ! <2>   DMS:PRINT        -Print an edit list of my consulting recs
+$ !OO
+$ !
+$ !
+$ !RN:1
+$ !*********************************************************
+$ !
+$ ! Sort the recs by date choosing only mine
+$ !
+$ run dms:sort
+mpl$share:[mpl.share.consult]consulting
+.con_date_1
+
+y
+.username                    
+PEGGY/ONLY
+
+A
+$ !
+$ !RN:2
+$ !*********************************************************
+$ !
+$ ! Print an edit list of my consulting recs
+$ !
+$ RUN DMS:PRINT
+mpl$share:[mpl.share.consult]consulting/nh
+1
+1
+.username
+.cust_key
+.cust_name
+.comp_code
+.c_descript_1/pos=1/NEQUAL=""
+.con_date_1/NEQUAL=""
+.hours_1/NEQUAL=""
+.c_descript_2/pos=1/NEQUAL=""
+.con_date_2/NEQUAL=""
+.hours_2/NEQUAL=""
+.c_descript_3/pos=1/NEQUAL=""
+.con_date_3/NEQUAL=""
+.hours_3/NEQUAL=""
+.c_descript_4/pos=1/NEQUAL=""
+.con_date_4/NEQUAL=""
+.hours_4/NEQUAL=""
+.c_descript_5/pos=1/NEQUAL=""/NEQUAL=""
+.con_date_5/NEQUAL=""
+.hours_5/NEQUAL=""
+.hours_1,.hours_2,.hours_3,.hours_4,.hours_5/TOTAL
+2
+Total Hours
+Total Hours
+5
+@@@.0@
+
+55
+1
+.con_date_1
+no
+
+Peggy's Consulting Edit List
+
+1
+PEGCON.list
+Y
+-1
+$ !
+$ !END

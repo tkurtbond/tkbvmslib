@@ -1,0 +1,19 @@
+!
+!------------------------------------------------------------------------------!
+!
+!	Program:   	T K B S T A R T U P . T P U
+!	Written By:	Thomas Kurt Bond
+!	Version:	1.00a
+!	Date:		8-Sep-86
+!
+!	Description:	Initialization file for tkb's version of eve.
+!
+!
+!	History:
+!   Ver     When    Who  What
+!   
+!------------------------------------------------------------------------------!
+!> TKBSTARTUP.TPU - Short Explaination
+!
+start_auto_indent;
+eve_set_right_margin(90);

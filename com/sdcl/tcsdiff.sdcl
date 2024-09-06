@@ -1,0 +1,93 @@
+!> TCSDIFF.SDCL -- Compare FILE vs. a revision in TCSFILE
+        SS$_BADPARAM = %x0014
+        TRUE = 1 .eq. 1
+        FALSE = 1 .ne. 1
+        opt_list = "/HELP/NODELETE/REVISION/STDIFF"
+        opt_list_len = f$length (opt_list)
+        revision = ""
+        nodelete = FALSE
+        diffcmd = "diff"
+
+        i = 1
+        while (f$extract (0, 1, p'i') .eqs. "-") {
+            opt = p'i'
+            if ((opt .eqs. "-?") .or (opt .eqs. "-H")) opt = "-HELP"
+            which = f$extract(1, 3, opt)
+            write sys$output "which: ", which
+            ok = (which .nes. "") .and. f$locate ("/" + which, opt_list) .ne. opt_list_len
+            if (ok)
+                gosub OPT$'which'
+            else {
+                write sys$output "tcsdiff: Invalid option: ''opt'"
+                exit SS$_BADPARAM
+            }
+            i = i + 1
+        }
+
+        # Our current source, to be compared to a previous revision.
+        filespec = p'i'
+        if (filespec .eqs. "") {
+            write sys$output "tcsdiff: no filespec specified"
+            exit SS$_BADPARAM
+        }
+
+        i = i + 1
+        tcsfile = p'i'
+        if (tcsfile .eqs. "") {
+            write sys$output "tcsdiff: no tcsfile specified"
+            exit SS$_BADPARAM
+        }
+
+        # Diff defaults device and directory to that of first argument,
+        # so fill those in for the current source using f$parse().
+        filespec = f$parse (filespec)
+        filename = f$parse (filespec,,, "NAME")
+        filetype = f$parse (filespec,,, "TYPE")
+
+        revfile = "SYS$SCRATCH:" + filename + filetype + "-TMP"
+        write sys$output "tcsfile: ", tcsfile, " revfile: ", revfile
+        if (revision .nes. "") write sys$output "revision: ", revision
+        get 'revision' 'tcsfile' >'revfile'
+        'diffcmd' 'revfile' 'filespec'
+        if (.not. nodelete) delete/log 'revfile';0
+        else write sys$error "stcsdiff: temporary file ", revfile, " left behind."
+        exit
+
+OPT$hel:
+        copy sys$input sys$error
+        // tcsdiff.sdcl -- Compare FILE vs. a revision in TCSFILE
+        //
+        // Usage:
+        //
+        //         tcsdiff [-h|-?|-help] [-history=M.N] [-stdiff] FILE TCSFILE
+        //
+        // where FILE is the source file you want to compare and TCSFILE is a
+        // SWTOOLS VOS TCS revision file.
+        // 
+        // The selected revision will be extracted from SOURCEFILE-SOURCETYPE.TCS
+        // into a temporaty file and compared to the version in the working directory.
+        // The temporary file will be deleted.
+        // 
+        // Options:
+        //        -? -h -help	 Display help message and exit.
+        //	  -stdiff        Use the SWTOOLS diff instead of VMS diff.
+        //        -revision=M.N  Compare working source against revision M.N.
+        exit
+
+OPT$nod:                                # No Delete
+	nodelete = TRUE
+        return
+
+
+
+OPT$rev:
+        p = f$locate ("=", opt)
+        l = f$length (opt)
+        if (p .ne. l)
+            revision = "-r" + f$extract (p+1, l, opt)
+        return
+
+
+OPT$std:
+        diffcmd = "stdiff"
+        return        

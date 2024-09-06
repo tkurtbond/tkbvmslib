@@ -1,0 +1,9 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 15:02:02 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$! DSUB.COM -- Test procedure for DIRSIZE.SDCL
+$ dirsize_verify == 1
+$ @com_src:dirsize [mpl.tkb.lib]
+%%E 1

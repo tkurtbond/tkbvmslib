@@ -1,0 +1,40 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:25 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ verify_on = f$verify(0)
+$!
+$!----------------------------------------------------------------------!
+$!
+$! Program:	E R R O R S . C O M
+$! By:		C. Paul Bond
+$! Version:	1.00a
+$! Date:	??-???-????
+$!
+$! Description:
+$!	    Display errors on the disk drives.
+$!
+$!
+$!	History:
+$!   Ver     When    Who  What
+$!  1.00a  <@2?@>  CPB  Initial version.
+$!
+$!----------------------------------------------------------------------!
+$!> ERRORS.COM -- Display the errors on the disk drives.
+$!     
+$	tmp = "scr:tmp$$13.tmp"
+$ 	show error/output='tmp'
+$	if $severity .ne. 1 then goto the_end
+$ 	search/output='tmp' 'tmp';-1 "DR"
+$ 	sort/key=(pos:25,siz:6,descending)/key=(pos:1,siz:10) 'tmp' 'tmp'
+$	write sys$output ""
+$	write sys$output ""
+$ 	write sys$output "Errors on Disk Drives:"
+$	write sys$output ""
+$ 	type 'tmp'
+$	write sys$output ""
+$ 	delete/nolog 'tmp';*
+$ the_end:
+$ 	if verify_on then set verify
+%%E 1

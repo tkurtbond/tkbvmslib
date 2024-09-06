@@ -1,0 +1,21 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:51 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+	.title	Hello, world
+	.ident	/v0.1/
+	.dsabl	global
+	.extrn	dsc$k_dtype_t, dsc$k_class_s
+	.extrn	lib$get_input, lib$put_output
+
+        .psect  hello_data,quad,noexe
+msg:    .ascid  /Hello, world!/
+
+        .psect	hello_code,exe,nowrt
+        .entry	hello,^m<>
+        pushaq  msg
+        calls   #1,g^lib$put_output
+        ret
+        .end    hello
+%%E 1

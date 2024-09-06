@@ -1,0 +1,11 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:27 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ if p1 .eqs. "" then p1 = "mailfolders.lis"
+$ define/user sys$output 'p1
+$ mail
+dir/fo
+$ exit
+%%E 1

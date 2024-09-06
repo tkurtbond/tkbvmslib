@@ -1,0 +1,21 @@
+* Multistage MMK descrip files.
+
+We'd like to have an install target that installs any out of date
+command procedures, rather than actually build in the destination
+directory, like we used to, because that leads to installing a broken
+program when we are debugging things.
+
+Because the version of MMK we have is a bit primitive we're using a
+two stage build process that allows building the necessary files to
+include in the state two DESCRIP_S2.MMS file.
+
+1.  The file PROGRAMS.DAT contains the list of programs to build and
+    install, listed one per line.
+
+2.  The DESCRIP.MMS file knows how to build PROGRAMS.GENMMS,
+    INSTALL.GENMMS, and RULES.GENMMS from PROGRAMS.DAT, and has ALL,
+    INSTALL, and CLEAN targets that call MMK with the second stage
+    description file, DESCRIP_S2.MMS.
+
+3.  DESCRIP_S2.MMS includes the .GENMMS files and has the rules for
+    building things.

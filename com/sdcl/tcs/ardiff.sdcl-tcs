@@ -1,0 +1,188 @@
+%%s 2/12/79
+%%d D 1.4 16-Aug-24 13:35:04 tkb 4 3
+%%c Make sure to use fullspec instead of filespec, so the full file specification
+%%c is used.  Also remove the unneeded history related code and options, since
+%%c SWTOOLS VOS archives don't have history.
+%%s 29/29/62
+%%d D 1.3 15-Aug-24 13:42:25 tkb 3 2
+%%c Make ARDIFF.SDCL actually compare a source file in the current working 
+%%c directory to the version of that file in a SWTOOLS VOS archive file.
+%%s 1/1/90
+%%d D 1.2 14-Aug-24 11:37:15 tkb 2 1
+%%c Fix a typo that caused errors.
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 17:32:53 tkb 1 0
+%%c Initial checkin.
+%%c Compare archive file to an earlier revision in a .TCS file.
+%%T
+%%I 1
+%%D 3
+!> ARDIFF.SDCL -- Compare archive file to an earlier revision in a .TCS file.
+%%E 3
+%%I 3
+!> ARDIFF.SDCL -- Compare archive file to the version in a SWTOOLS VOS archive.
+%%E 3
+        SS$_BADPARAM = %x0014
+        TRUE = 1 .eq. 1
+        FALSE = 1 .ne. 1
+%%D 4
+        opt_list = "/HELP/HISTORY/NODELETE/STDIFF"
+%%E 4
+%%I 4
+        opt_list = "/HELP/NODELETE/STDIFF"
+%%E 4
+        opt_list_len = f$length (opt_list)
+%%D 4
+        history = ""
+        histoption = ""
+%%E 4
+        nodelete = FALSE
+        diffcmd = "diff"
+%%I 3
+        debugging = FALSE
+%%E 3
+
+        i = 1
+        while (f$extract (0, 1, p'i') .eqs. "-") {
+            opt = p'i'
+            if ((opt .eqs. "-?") .or (opt .eqs. "-H")) opt = "-HELP"
+            which = f$extract(1, 3, opt)
+%%D 3
+            write sys$output "which: ", which
+%%E 3
+%%I 3
+            if (debugging) write sys$output "which: ", which
+%%E 3
+            ok = (which .nes. "") .and. f$locate ("/" + which, opt_list) .ne. opt_list_len
+            if (ok)
+                gosub OPT$'which'
+            else {
+                write sys$output "ardiff: Invalid option: ''opt'"
+                exit SS$_BADPARAM
+            }
+            i = i + 1
+        }
+
+%%D 3
+        # Our current source, to be compared to a previous revision.
+%%E 3
+%%I 3
+        # Our current source, to be compared to the version in an archive.
+%%E 3
+        filespec = p'i'
+        if (filespec .eqs. "") {
+            write sys$output "ardiff: no filespec specified"
+            exit SS$_BADPARAM
+        }
+
+        i = i + 1
+%%D 3
+        tcsfile = p'i'
+        if (tcsfile .eqs. "") {
+            write sys$error "ardiff: no TCS file specified"
+%%E 3
+%%D 2
+            exit SS$_BADPARM
+%%E 2
+%%I 2
+%%I 3
+        arfile = p'i'
+        if (arfile .eqs. "") {
+            write sys$error "ardiff: no archive file specified"
+%%E 3
+            exit SS$_BADPARAM
+%%E 2
+        }
+
+        # Diff defaults device and directory to that of first argument,
+        # so fill those in for the current source using f$parse().
+%%D 3
+        filespec = f$parse (filespec)   
+
+%%E 3
+%%I 3
+        fullspec = f$parse (filespec)
+                        
+%%E 3
+        filename = f$parse (filespec,,, "NAME")
+        filetype = f$parse (filespec,,, "TYPE")
+%%D 3
+        histfile = tcsfile
+        revfile = "SYS$SCRATCH:" + filename + filetype + "-TMP"
+        write sys$output "histfile: ", histfile, " revfile: ", revfile
+        if (history .nes. "") histoption = "-h" + history
+        write sys$output "history: ", history, " histoption: ", histoption
+        get 'histoption' 'histfile' >'revfile'
+        'diffcmd' 'revfile' 'filespec'
+        if (.not. nodelete) delete/log 'revfile';0
+        else write sys$error "sardiff: temporary file ", revfile, " left behind."
+%%E 3
+%%I 3
+        tmpfile = "SYS$SCRATCH:" + filename + filetype + "-TMP"
+        write sys$output "arfile: ", arfile, " tmpfile: ", tmpfile
+        ar p 'arfile' 'filespec' >'tmpfile'
+%%D 4
+        'diffcmd' 'tmpfile' 'filespec'
+%%E 4
+%%I 4
+        'diffcmd' 'tmpfile' 'fullspec'
+%%E 4
+        if (.not. nodelete) delete/log 'tmpfile';0
+        else write sys$error "sardiff: temporary file ", tmpfile, " left behind."
+%%E 3
+        exit
+
+OPT$hel:
+        copy sys$input sys$error
+%%D 3
+        // ardiff.sdcl -- Compare FILE.TYPE vs. history in a [.TCS]FILE.TYPE-TCS file.
+        // Usage:
+        //         @ardiff [-h|-?|-help] [-history=M.N] [-stdiff] SOURCEFILE.SOURCETYPE.
+        // where SOURCEFILE.SOURCETYPE is the source file you want to compare.
+        // The selected revision will be extracted from SOURCEFILE-SOURCETYPE.TCS
+        // into a temporaty file and compared to the version in the working directory.
+        // The temporary file will be deleted.
+        // 
+        // Options:
+        //         -history=M.N	 Compare working source against revision M.N.
+        //        -? -h -help	 Display help message and exit.
+        //	  -stdiff        Use the SWTOOLS diff instead of VMS diff.
+%%E 3
+%%I 3
+// ardiff.sdcl -- Compare archive file to the version in a SWTOOLS VOS archive.
+// Usage:
+// 
+//         ardiff [-h|-?|-help] [-stdiff] SRCFILE ARFILE
+// 
+// where SRCFILE is the source file you want to compare and ARFILE
+// contains the SWTOOLS VOS archive containing the version to compare
+// to.  The version in the archive file will be extracted to a
+// temporary file file and compared to the version in the working
+// directory.  The temporary file will be deleted unless
+// 
+// Options:
+//        -? -h -help	 Display help message and exit.
+//	  -stdiff        Use the SWTOOLS diff instead of VMS diff.
+%%E 3
+        exit
+
+%%D 4
+OPT$his:
+        p = f$locate ("=", opt)
+        l = f$length (opt)
+        if (p .ne. l)
+            history = f$extract (p+1, l, opt)
+        return
+
+
+%%E 4
+OPT$nod:                                # No Delete
+	nodelete = TRUE
+        return
+
+
+
+OPT$std:
+        diffcmd = "stdiff"
+        return        
+%%E 1

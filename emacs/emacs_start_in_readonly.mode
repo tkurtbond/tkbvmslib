@@ -1,0 +1,45 @@
+X-NEWS: wvnvms comp.emacs: 2590
+Relay-Version: VMS News - V6.0 1/9/90 VAX/VMS V5.4; site wvnvms.wvnet.edu
+Path: wvnvms.wvnet.edu!cs.wvu.wvnet.edu!haven.umd.edu!boingo.med.jhu.edu!aplcen!uakari.primate.wisc.edu!zaphod.mps.ohio-state.edu!think.com!barmar
+Newsgroups: comp.emacs
+Subject: Re: emacs in read-only mode - how to ?
+Message-ID: <1991Jul18.162437.26084@Think.COM>
+From: barmar@think.com (Barry Margolin)
+Date: 18 Jul 91 16:24:37 GMT
+Reply-To: barmar@think.com
+Sender: news@Think.COM
+References: <1991Jul17.152238.3594@saifr00.cfsat.honeywell.com>
+Organization: Thinking Machines Corporation, Cambridge MA, USA
+Lines: 31
+
+In article <1991Jul17.152238.3594@saifr00.cfsat.honeywell.com> murali@saifr00.cfsat.honeywell.com (R. Muralidhar) writes:
+>Can anyone out there tell me how to invoke emacs in read-only mode. Similar to the
+>'vi -R ' command... In particular, I want to be able to specfiy a filename like
+>
+>	emacs <some flags> foo
+>
+>and expect the buffer containing foo to be read-only when emacs comes up (much
+>like the way it would be if I did not have write permission to foo). It
+>will also be nice if all further files I open (via ^X ^F) also open up in
+>read-only mode, regardless of file protection.
+
+I'm assuming you're talking about GNU Emacs (you should always specify the
+flavor of Emacs, and the version when reporting a bug).
+
+Put the following in your .emacs:
+
+(defun make-default-read-only (arg)
+  (setq find-file-hooks
+	;; Add this hook at the end, in case other hooks modify the buffer
+	(nconc find-file-hooks (list 'set-read-only))))
+
+(defun set-read-only ()
+  (setq buffer-read-only t))
+
+(setq command-switch-alist
+      (cons '("-R" . make-default-read-only) command-switch-alist))
+-- 
+Barry Margolin, Thinking Machines Corp.
+
+barmar@think.com
+{uunet,harvard}!think!barmar

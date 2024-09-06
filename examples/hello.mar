@@ -1,0 +1,15 @@
+	.title	Hello, world
+	.ident	/v0.1/
+	.dsabl	global
+	.extrn	dsc$k_dtype_t, dsc$k_class_s
+	.extrn	lib$get_input, lib$put_output
+
+        .psect  hello_data,quad,noexe
+msg:    .ascid  /Hello, world!/
+
+        .psect	hello_code,exe,nowrt
+        .entry	hello,^m<>
+        pushaq  msg
+        calls   #1,g^lib$put_output
+        ret
+        .end    hello

@@ -1,0 +1,793 @@
+%%s 4/1/368
+%%d D 1.12 06-Sep-24 11:11:18 tkb 12 11
+%%c Update procedure header command and usage with better terse description of
+%%c the purpose of TCS.SDCL.
+%%s 4/2/365
+%%d D 1.11 16-Aug-24 15:10:01 tkb 11 10
+%%c Make TCS INIT ignore .OLB files as well.
+%%s 1/1/366
+%%d D 1.10 16-Aug-24 13:40:30 tkb 10 9
+%%c Fixed typo in the usage information.
+%%s 66/12/301
+%%d D 1.9 16-Aug-24 10:18:59 tkb 9 8
+%%c Add TCS INIT command.  Remove outdated info from TCS UNCOVERED in help.
+%%s 5/2/308
+%%d D 1.8 16-Aug-24 08:54:49 tkb 8 7
+%%c Add initialization of forgotten ignoredtypes.  Change to only output filename
+%%c of files that don't nave TCS files, not filename and message and TCS File, 
+%%c unless verbose mode is on.
+%%s 20/10/290
+%%d D 1.7 15-Aug-24 14:05:13 tkb 7 6
+%%c Change from specifying the IGNOREDTYPES as a parameter to specifying them as
+%%c a option, so one doesn't have to remember to specify a null string as the 
+%%c filespec when specifying IGNOREDTYPES.
+%%s 62/22/238
+%%d D 1.6 15-Aug-24 12:45:11 tkb 6 5
+%%c Added a TCS DIFF command, based on TCSDIFF.SDCL, which will be converted to
+%%c diffing a specified file and a revision in a specified TCS file.
+%%s 38/19/222
+%%d D 1.5 15-Aug-24 11:26:45 tkb 5 4
+%%c Added a TCS MV command.
+%%s 1/0/240
+%%d D 1.4 13-Aug-24 15:48:50 tkb 4 3
+%%c Add a blank line in the usage output.
+%%s 3/0/237
+%%d D 1.3 13-Aug-24 15:24:22 tkb 3 2
+%%c Mention in the usage output that when using TCS UNCOVERED the FILESPEC
+%%c parameter can be specified as an empty string.
+%%s 104/23/133
+%%d D 1.2 13-Aug-24 15:10:46 tkb 2 1
+%%c Untabify.  Add a UNCOVERED command to list files not under TCS revision
+%%c control.
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 11:44:21 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+%%D 6
+!> TCS.SDCL -- TCS frontend.
+%%E 6
+%%I 6
+%%D 12
+!> TCS.SDCL -- TCS frontend for working with single source files.
+%%E 12
+%%E 6
+%%I 12
+!> TCS.SDCL -- TCS frontend for working w/source files w/TCS files in [.TCS].
+%%E 12
+##############################################################################
+%%I 6
+### Use TCS HELP to view the usage documenation.
+%%E 6
+###
+%%D 6
+### tcs [ help | -h | -help | -? ]
+%%E 6
+%%D 2
+### tcs admin file
+### tcs get [-ooutfile] [-h] [-rM.N] file
+### tcs delta file
+%%E 2
+%%I 2
+%%D 6
+### tcs admin FILE
+### tcs get [-ooutfile] [-h] [-rM.N] FILE
+### tcs delta FILE
+%%E 6
+%%E 2
+%%D 6
+### tcs outdated
+%%E 6
+%%I 2
+%%D 6
+### tcs uncovered [FILESPEC] [IGNOREDTYPES]
+%%E 6
+%%E 2
+%%D 6
+###
+%%E 6
+%%I 6
+### This program implments commands for working with single source
+### files and TCS such that FILE.TYPE has a corresponding TCS file
+### [.TCS]FILE.TYPE-TCS.
+%%E 6
+##############################################################################
+%%I 7
+    SS$_BADPARAM = %x0014
+%%E 7
+    wso :== write sys$output
+    wse :== write sys$error
+    TRUE = 1 .eq. 1
+    FALSE = 1 .ne. 1
+    QUIET = %x10000000
+
+%%D 2
+    debugging = TRUE
+%%E 2
+%%I 2
+    months_jan = "01"
+    months_feb = "02"
+    months_mar = "03"
+    months_apr = "04"
+    months_may = "05"
+    months_jun = "06"
+    months_jul = "07"
+    months_aug = "08"
+    months_sep = "09"
+    months_oct = "10"
+    months_nov = "11"
+    months_dec = "12"
+%%E 2
+
+%%I 2
+    debugging = f$type (tcs_debugging) .nes. ""
+    verbose = FALSE
+%%I 6
+    nodelete = FALSE
+    diffcmd = "diff"                    # Default to VMS diff.
+    revision = ""
+%%E 6
+%%I 8
+    ignoredtypes = ""
+%%E 8
+
+%%E 2
+    command = p1
+
+    if (command .eqs. "HELP" .or.
+        command .eqs. "-H" .or.
+        command .eqs. "-HELP" .or.
+        command .eqs. "-?")
+    {
+        goto usage
+    }
+
+    if ((command .eqs. "") .or.
+%%D 6
+        .not. (command .eqs. "ADMIN" .or.
+               command .eqs. "GET" .or.
+               command .eqs. "DELTA" .or.
+%%E 6
+%%D 2
+               command .eqs. "OUTDATED"))
+%%E 2
+%%I 2
+%%I 5
+%%D 6
+               command .eqs. "MV" .or.
+%%E 6
+%%E 5
+%%I 6
+        .not. (command .eqs. "ADMIN"    .or.
+               command .eqs. "DELTA"    .or.
+               command .eqs. "DIFF"     .or. 
+               command .eqs. "GET"      .or.
+%%I 9
+               command .eqs. "INIT"     .or.
+%%E 9
+               command .eqs. "MV"       .or.
+%%E 6
+               command .eqs. "OUTDATED" .or.
+               command .eqs. "UNCOVERED"))
+%%E 2
+    {
+        wse "tcs: unrecognized TCS command: """, command, """"
+        exit 2
+    }
+
+%%D 2
+    i = 2
+%%E 2
+%%I 2
+    param_idx = 2
+%%E 2
+    num_options = 0
+    outfile = ""
+%%D 2
+    while (f$extract (0, 1, p'i') .eqs. "-") {
+%%E 2
+%%I 2
+%%I 6
+    ## Right now, option handling is not handled separately for each command.
+%%E 6
+    while (f$extract (0, 1, p'param_idx') .eqs. "-") {
+%%E 2
+%%D 6
+         ## Remember, DCL upcases everything!
+%%E 6
+%%D 2
+        if (f$extract (0, 2, p'i') .eqs. "-O") {
+            outfile = f$extract (2, f$length (p'i'), p'i')
+%%E 2
+%%I 2
+%%D 6
+        if (f$extract (0, 2, p'param_idx') .eqs. "-O") {
+%%E 6
+%%I 6
+%%I 7
+        opt = p'param_idx'
+        opt_len = f$length (opt)
+%%E 7
+
+        ## First, we'll handle specific options.
+%%D 7
+        if (f$extract (0, 2, p'param_idx') .eqs. "-O") { # Remember, DCL upcases everything!
+%%E 7
+%%E 6
+%%D 7
+            outfile = f$extract (2, f$length (p'param_idx'), p'param_idx')
+%%E 7
+%%E 2
+%%I 6
+%%D 7
+        } else if (f$extract (0, 2, p'param_idx') .eqs. "-R") {
+            # revision = """-r" + f$extract (2, f$length (p'param_idx'), p'param_idx') + """"
+            revision = "-r" + f$extract (2, f$length (p'param_idx'), p'param_idx')
+        } else if (p'param_idx' .eqs. "-NODELETE") {
+%%E 7
+%%I 7
+        if (f$extract (0, 2, opt) .eqs. "-O") { # Remember, DCL upcases everything!
+            outfile = f$extract (2, opt_len, opt)
+        } else if (f$extract (0, 2, opt) .eqs. "-R") {
+            # revision = """-r" + f$extract (2, opt_len, opt) + """"
+            revision = "-r" + f$extract (2, opt_len, opt)
+        } else if (opt .eqs. "-NODELETE") {
+%%E 7
+            nodelete = TRUE
+%%D 7
+        } else if (p'param_idx' .eqs. "-STDIFF") {
+%%E 7
+%%I 7
+        } else if (opt .eqs. "-STDIFF") {
+%%E 7
+            diffcmd = "stdiff"
+%%E 6
+%%I 7
+        } else if (f$locate ("-IGNORE", opt) .nes. opt_len) {
+            pos = f$locate ("=", opt)
+            if (pos .nes. opt_len) {    # File types to ignore specified
+                    ignoredtypes = f$extract (pos + 1, opt_len, opt)
+            } else {                    # Ill-formed -IGNORE=TYPE[,...]
+                wse "tcs diff: ill formed -IGNORE: ", opt
+                exit SS$_BADPARAM
+            }
+%%E 7
+        } else {
+%%I 6
+            ## Other options are accumulated and then passed on to options.
+%%E 6
+            num_options = num_options + 1
+%%D 2
+            options_'num_options' = p'i'
+%%E 2
+%%I 2
+%%D 7
+            options_'num_options' = p'param_idx'
+%%E 7
+%%E 2
+%%I 7
+            options_'num_options' = opt
+%%E 7
+        }
+%%D 2
+        i = i + 1
+%%E 2
+%%I 2
+        param_idx = param_idx + 1
+%%E 2
+    }
+
+%%D 2
+    file = p'i'
+%%E 2
+%%I 2
+%%D 5
+    file = p'param_idx'                         # Can be blank
+%%E 5
+%%E 2
+%%I 5
+    file1 = p'param_idx'                         # Can be blank
+%%E 5
+    dirname = f$search ("TCS.DIR")
+    if (dirname .eqs. "") {             # No [.TCS] direcdtory.
+        create/dir [.TCS]
+    }
+
+%%D 2
+    tcsfile = "[.tcs]" + file + "-TCS"
+%%E 2
+%%I 2
+%%D 5
+    tcsfile = "[.tcs]" + file + "-TCS"  # Not used by some commands.
+%%E 5
+%%E 2
+%%I 5
+    tcsfile = "[.tcs]" + file1 + "-TCS"  # Not used by some commands.
+%%E 5
+
+    if (debugging) {
+%%D 5
+        wso "command: ", command, " file: ", file, " tcsfile: ", tcsfile
+%%E 5
+%%I 5
+        wso "command: ", command, " file1: ", file1, " tcsfile: ", tcsfile
+%%E 5
+        wso "outfile: """, outfile, """"
+    }
+
+%%D 5
+    if (command .eqs. "ADMIN") {
+        goto do_admin
+    } else if (command .eqs. "GET") {
+        goto do_get
+    } else if (command .eqs. "DELTA") {
+        goto do_delta
+    } else if (command .eqs. "OUTDATED") {
+        goto do_outdated
+%%E 5
+%%I 2
+%%D 5
+    } else if (command .eqs. "UNCOVERED") {
+        goto do_uncovered
+%%E 5
+%%E 2
+%%D 5
+    }
+%%E 5
+%%I 5
+    goto do_'command'
+
+%%E 5
+    wso "tcs: This should be impossible, so somebody screwed up.  Exiting."
+    exit 2 .or. QUIET
+
+
+do_admin:
+    result = f$search (tcsfile)
+    if (result .nes. "") {
+        wse "tcs: TCS file ", tcsfile, " already exists, exiting."
+        exit 2
+    }
+%%D 5
+    file = f$edit (file, "LOWERCASE")
+    dclcmd = "admin ""-i''file'"" ''tcsfile'"
+%%E 5
+%%I 5
+    file1 = f$edit (file1, "LOWERCASE")
+    dclcmd = "admin ""-i''file1'"" ''tcsfile'"
+%%E 5
+    wso "Executing ", dclcmd
+    define/user sys$input sys$command
+    'dclcmd'
+    exit
+
+%%I 6
+%%I 9
+
+do_delta:
+    result = f$search (tcsfile)
+    if (result .eqs. "") {
+        wse "tcs: TCS file ", tcsfile, " does not exist, exiting."
+        exit 2
+    }
+    define/user sys$input sys$command
+    delta 'file1' 'tcsfile'
+    exit
+
+
+%%E 9
+do_diff:
+    # Diff defaults device and directory to that of first argument,
+    # so fill those in for the current source using f$parse().
+    filespec = f$parse (file1)   
+%%E 6
+
+%%I 6
+    filename = f$parse (filespec,,, "NAME")
+    filetype = f$parse (filespec,,, "TYPE")
+    histfile = "[.TCS]" + filename + filetype + "-TCS"
+    revfile = "SYS$SCRATCH:" + filename + filetype + "-TMP"
+    write sys$output "histfile: ", histfile, " revfile: ", revfile
+    if (revision .nes. "") write sys$output "revision: ", revision
+    get 'revision' 'histfile' >'revfile'
+    'diffcmd' 'revfile' 'filespec'
+    if (.not. nodelete) delete/log 'revfile';0
+    else write sys$error "stcsdiff: temporary file ", revfile, " left behind."
+    exit
+
+
+%%E 6
+do_get:
+    if (outfile .eqs. "") {
+%%D 6
+        get 'options_1' 'options_2' 'options_3' 'options_4' 'tcsfile'
+%%E 6
+%%I 6
+        get 'revision' 'options_1' 'options_2' 'options_3' 'options_4' 'tcsfile'
+%%E 6
+    } else {
+%%D 6
+        get 'options_1' 'options_2' 'options_3' 'options_4' 'tcsfile' >'outfile'
+%%E 6
+%%I 6
+        get 'revision' 'options_1' 'options_2' 'options_3' 'options_4' 'tcsfile' >'outfile'
+%%E 6
+    }
+    exit
+
+%%D 9
+do_delta:
+    result = f$search (tcsfile)
+    if (result .eqs. "") {
+        wse "tcs: TCS file ", tcsfile, " does not exist, exiting."
+        exit 2
+%%E 9
+%%I 9
+do_init:
+    if (ignoredtypes .nes. "") ignoredtypes = "," + ignoredtypes
+    ignoredtypes_len = f$length (ignoredtypes)
+    tmpfile = "SYS$SCRATCH:INITCHECKIN-" + f$getjpi ("", "PID") + ".TMP"
+    copy sys$input 'tmpfile'
+    //Initial checkin.
+    //.
+    filespec = file1
+    if (filespec .eqs. "") filespec = "*.*"
+    filespec = f$parse (";0", filespec)
+    repeat {
+        file = f$search (filespec, 1)
+        if (verbose) wse "file: ", file
+        if (file .eqs. filespec) break  # No match for wildcard
+        if (file .eqs. "") break        # No more matches for wildcard
+        name = f$parse (file,,, "NAME")
+        type = f$parse (file,,, "TYPE")
+        workfile = name + type
+        wse "workfile: ", workfile
+        if ((type .eqs. ".DIR") .or. 
+            (type .eqs. ".EXE") .or.
+            (type .eqs. ".LIS") .or.
+            (type .eqs. ".MAP") .or.
+%%D 11
+            (type .eqs. ".OBJ"))
+%%E 11
+%%I 11
+            (type .eqs. ".OBJ") .or.
+            (type .eqs. ".OLB"))
+%%E 11
+        {
+            wse "Skipping ", workfile
+            next
+        }
+        # Skip the ignored file types.
+        skip = "," + (type - ".")
+        if (debugging) wse "skip: ", skip, " ignoredtypes: ", ignoredtypes
+        if (f$locate (skip, ignoredtypes) .ne. ignoredtypes_len) {
+            wse "Skipping user specified extension for ", workfile
+            next
+        }
+        define/user sys$command 'tmpfile'
+        tcs admin 'workfile'
+        wso "Entered ", workfile
+%%E 9
+    }
+%%D 9
+    define/user sys$input sys$command
+%%E 9
+%%D 5
+    delta 'file' 'tcsfile'
+%%E 5
+%%I 5
+%%D 9
+    delta 'file1' 'tcsfile'
+%%E 9
+%%E 5
+%%I 9
+    delete/log 'tmpfile';0
+%%E 9
+    exit
+%%I 5
+
+do_mv:
+    i = param_idx + 1
+    to_file = p'i'
+    from_file = f$parse (";*", file1)
+    to_file = f$parse (";*", to_file)
+    if (debugging) wse "from_file: ", from_file, " to_file: ", to_file
+    from_tcs_device = f$parse (from_file,,, "DEVICE")
+    from_tcs_directory = f$parse (from_file,,, "DIRECTORY")
+    from_tcs_name = f$parse (from_file,,, "NAME")
+    from_tcs_type = f$parse (from_file,,, "TYPE") + "-TCS"
+    from_tcs_file = from_tcs_device + (from_tcs_directory - "]") + ".TCS]" + \
+        from_tcs_name + from_tcs_type + ";*"
+    to_tcs_device = f$parse (to_file,,, "DEVICE")
+    to_tcs_directory = f$parse (to_file,,, "DIRECTORY")
+    to_tcs_name = f$parse (to_file,,, "NAME")
+    to_tcs_type = f$parse (to_file,,, "TYPE") + "-TCS"
+    to_tcs_file = to_tcs_device + (to_tcs_directory - "]") + ".TCS]" + \
+        to_tcs_name + to_tcs_type + ";*"
+    if (debugging) wse "from_tcs_file: ", from_tcs_file, " to_tcs_file: ", to_tcs_file
+    rename 'from_file' 'to_file'/log
+    rename 'from_tcs_file' 'to_tcs_file/log
+    exit
+%%E 5
+    
+
+do_outdated:
+    filespec = "[.tcs]*.*-tcs"
+    repeat {
+        tcsfile = f$search (filespec)
+        if (tcsfile .eqs. "") break
+        tcsrdt = f$file (tcsfile, "RDT")
+%%I 2
+        tcs_day     = f$extract (00, 02, tcsrdt)
+        tcs_monname = f$extract (03, 03, tcsrdt)
+        tcs_year    = f$extract (07, 04, tcsrdt)
+        tcs_rest    = f$extract (11, 12, tcsrdt)
+        tcs_monnum  = months_'tcs_monname'
+        tcs_cmpdate = tcs_year + tcs_monnum + tcs_day + tcs_rest
+        if (debugging .and. verbose) wso "tcs_cmpdate: ", tcs_cmpdate
+%%E 2
+        dirname = f$parse (tcsfile,,, "DIRECTORY") - ".TCS]" + "]"
+        filename = f$parse (tcsfile,,, "NAME")
+        filetype = f$parse (tcsfile,,, "TYPE") - "-TCS"
+        srcfile = filename + filetype
+        srcrdt = f$file (srcfile, "RDT")
+%%D 2
+        if (srcrdt .gts. tcsrdt) wso "tcs: ", srcfile, " is newer than ", tcsfile
+%%E 2
+%%I 2
+        src_day     = f$extract (00, 02, srcrdt)
+        src_monname = f$extract (03, 03, srcrdt)
+        src_year    = f$extract (07, 04, srcrdt)
+        src_rest    = f$extract (11, 12, srcrdt)
+        src_monnum  = months_'src_monname'
+        src_cmpdate = src_year + src_monnum + src_day + src_rest
+        if (debugging .and. verbose) wso "src_cmpdate: ", src_cmpdate
+        if (src_cmpdate .gts. tcs_cmpdate) wso srcfile, " is newer than ", tcsfile
+%%E 2
+    }
+    exit
+
+
+%%I 2
+do_uncovered:
+    i = param_idx + 1
+%%D 7
+    ignoredtypes = p'i'
+%%E 7
+    if (ignoredtypes .nes. "") ignoredtypes = "," + ignoredtypes
+    if (debugging) wse "ignoredtypes: ", ignoredtypes
+    ignoredtypes_len = f$length (ignoredtypes)
+%%D 5
+    if (file .eqs. "") filespec = "*.*"
+    else filespec = file
+%%E 5
+%%I 5
+    if (file1 .eqs. "") filespec = "*.*"
+    else filespec = file1
+%%E 5
+    if (debugging) wse "filespec: ", filespec
+    old_result = ""
+    repeat {
+        result = f$search (filespec, 1)
+        if (debugging) wso "result: ", result
+        # No more results
+        if (result .eqs. "") break
+        # No wildcard specified
+        if (result .eqs. old_result) break 
+        old_result = result
+        filename = f$parse (result,,, "NAME")
+        filetype = f$parse (result,,, "TYPE")
+        file = filename + filetype 
+        # Ignore directories
+        if (filetype .eqs. ".DIR") next 
+        # Skip the ignored file types.
+        skip = "," + (filetype - ".")
+        if (debugging) wse "skip: ", skip, " ignoredtypes: ", ignoredtypes
+        if (f$locate (skip, ignoredtypes) .ne. ignoredtypes_len) {
+            if (debugging) wse "Skipping ", file
+            next
+        }
+        tcsfile = "[.TCS]" + file + "-TCS"
+%%D 8
+        if (f$search (tcsfile) .eqs. "")
+            wso file, " does not have a ", tcsfile
+%%E 8
+%%I 8
+        if (f$search (tcsfile) .eqs. "") {
+            if (verbose) wso file, " does not have a ", tcsfile
+            else wso file
+        }
+%%E 8
+    }
+    exit
+
+
+%%E 2
+usage:
+    copy sys$input sys$output
+%%I 12
+//TCS frontend for working with source files with associated TCS files in
+//a [.TCS] directory.
+//
+%%E 12
+//usage:
+//tcs [ help | -h | -help | -? ]
+%%D 2
+//	Output this help message.
+%%E 2
+%%I 2
+//      Output this help message.
+%%E 2
+%%I 4
+//
+%%E 4
+//tcs admin FILE
+//
+%%D 2
+//	Initialize TCS file [.TCS]FILE from FILE.
+%%E 2
+%%I 2
+%%D 6
+//      Initialize TCS file [.TCS]FILE from FILE.
+%%E 6
+%%E 2
+%%I 6
+//      Initialize TCS file [.TCS]FILE-TCS from FILE.
+%%E 6
+//
+%%I 6
+%%I 9
+//tcs delta FILE
+//
+//      Add a new version to TCS file [.TCS]FILE from FILE.
+//
+%%E 9
+//tcs diff [-nodelete] [-rM.N] [-stdiff] FILE
+//
+//      Compare FILE to a revision from corresponding TCS file, defaulting
+//      to the most recent.
+//
+//      -nodelete      Don't delete the temporary file extracted from the
+//                     TCS file.
+//
+//      -rM.M          Compare to revision M.N instead of the most recent.
+//
+//      -stdiff        Use SWTOOLS VOS diff instead of VMS diff.
+//
+%%E 6
+//tcs get [-oOUTFILE] [-h] [-rM.N] FILE
+//
+%%D 2
+//	Get a revision of FILE from TCS file [.TCS]FILE.
+%%E 2
+%%I 2
+%%D 6
+//      Get a revision of FILE from TCS file [.TCS]FILE.
+%%E 6
+%%E 2
+%%I 6
+//      Get a revision of FILE from TCS file [.TCS]FILE-TCS
+%%E 6
+//
+%%D 6
+//          -oOUTFILE writes the output to OUTFILE.
+%%E 6
+%%D 2
+//	        If -o is not specifed the output goes to standard output.
+%%E 2
+%%I 2
+%%D 6
+//              If -o is not specifed the output goes to standard output.
+%%E 6
+%%E 2
+%%I 6
+//          -oOUTFILE  writes the output to OUTFILE.
+//                     If -o is not specifed the output goes to standard output.
+%%E 6
+//
+%%D 2
+//	    -h Output history information instead of a revision.
+%%E 2
+%%I 2
+%%D 6
+//          -h Output history information instead of a revision.
+%%E 6
+%%E 2
+%%I 6
+//          -h         Output history information instead of a revision.
+%%E 6
+//
+%%D 2
+//	    -rM.N Output revision M.N.
+%%E 2
+%%I 2
+%%D 6
+//          -rM.N Output revision M.N.
+%%E 6
+%%E 2
+%%I 6
+//          -rM.N      Output revision M.N.
+%%E 6
+//
+%%D 9
+//tcs delta FILE
+%%E 9
+%%I 9
+//tcs init -ignored=IGNOREDTYPES [FILESPEC]
+// 
+//      Put files in the current directory under TCS revision control.  If
+//      FILESPEC is specified it should be a wildcard and only files
+//      matching the wildard will be put in TCS revision control
+%%E 9
+//
+%%D 2
+//	Add a new version to TCS file [.TCS]FILE from FILE.
+%%E 2
+%%I 2
+%%D 9
+//      Add a new version to TCS file [.TCS]FILE from FILE.
+%%E 9
+%%E 2
+%%I 9
+//      If IGNOREDTYPES is specified it should be a single file type
+//      (without the ".") or a comma separated list of file types
+//      to be ignored.
+%%E 9
+//
+%%I 5
+%%I 9
+%%D 11
+//      Note that .DIR, .EXE, .LIS, .MAP, and .OBJ files are always skipped.
+%%E 11
+%%I 11
+//      Note that .DIR, .EXE, .LIS, .MAP, .OBJ, and .OLB files are
+//      always skipped.
+%%E 11
+//
+%%E 9
+//tcs mv FILE NEWFILE
+//
+//      Move (rename) FILE to NEWFILE and rename its .TCS file as well.
+//
+%%E 5
+//tcs outdated
+//
+%%D 2
+//	List all the source files that are newer than their corresponding
+//	TCS file in [.TCS]
+%%E 2
+%%I 2
+//      List all the source files that are newer than their corresponding
+%%D 10
+//      TCS file in [.TCS]
+%%E 10
+%%I 10
+//      TCS file in [.TCS].
+%%E 10
+//
+%%D 7
+//tcs uncovered [FILESPEC] [IGNOREDTYPES]
+%%E 7
+%%I 7
+//tcs uncovered [-ignore=IGNOREDTYPES] [FILESPEC]
+%%E 7
+//
+//      List all the files in the current directory that do not have
+//      corresponding files in [.TCS].
+//
+//      If FILEPSEC is specified it should be a VMS wildcard that
+//      will be applied to the current directory for matching.
+//
+//      If IGNOREDTYPES is specified it should be a single file type
+//      (without the ".") or a comma separated list of file types
+//      to be ignored.
+%%E 2
+%%I 3
+%%D 9
+//
+//      If one needs to specified IGNOREDTYPES but not FILESPEC just
+//      specify an empty string for FILESPEC.
+%%E 9
+%%E 3
+    exit 2 .or. QUIET
+%%E 1

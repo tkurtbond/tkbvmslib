@@ -1,0 +1,46 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:28 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$! Searches system message files for a match with a status code
+$!
+$! format: @MSGTXT code [filespec] [log]
+$!
+$! code is assumed to be hexidecimal
+$! filespec is the file name(s) to be searched in SYS$MESSAGE (default=*)
+$! log will list files being searched if non null
+$!
+$!
+$ IF p1.EQS."" THEN INQUIRE p1 "Message ID"
+$ IF F$LOCATE("%X",p1).GE.F$LENGTH(p1) THEN p1="%X"+p1
+$ IF p2.EQS."" THEN p2="*"
+$ txt=F$MESSAGE(p1)
+$ IF F$LOCATE("NOMSG",txt).LT.F$LENGTH(txt) THEN GOTO DoSearch
+$ WRITE SYS$OUTPUT "Message found in system messages"
+$ WRITE SYS$OUTPUT txt
+$ EXIT
+$ DoSearch:
+$ Oldmsg=F$ENVIRONMENT("MESSAGE")
+$ ON CONTROL_Y THEN GOTO NotFound
+$ SET MESSAGE/NOFACILITY/NOSEVERITY/NOIDENT/NOTEXT ! Avoid warnings for non
+$                                                  ! message files
+$loop: file=F$SEARCH("SYS$MESSAGE:''p2'.EXE")
+$      IF file.EQS."" THEN GOTO NotFound
+$      IF p3.NES."" THEN WRITE SYS$OUTPUT "''file'"
+$      ON WARNING THEN GOTO loop
+$      SET MESSAGE 'file'
+$      txt=F$MESSAGE(p1)
+$      IF F$LOCATE("NOMSG",txt).GE.F$LENGTH(txt) THEN GOTO found
+$ GOTO loop
+$ found:
+$ a=F$SEARCH(F$ENVIRONMENT("PROCEDURE"))        ! Cancel search
+$ WRITE SYS$OUTPUT "Message found in ''file'"
+$ WRITE SYS$OUTPUT txt
+$ SET MESSAGE'Oldmsg'
+$ EXIT
+$ NotFound:
+$ WRITE SYS$OUTPUT "Message ''p1' not found"
+$ SET MESSAGE'Oldmsg' SYS$MESSAGE:SYSMSG
+$ EXIT
+%%E 1

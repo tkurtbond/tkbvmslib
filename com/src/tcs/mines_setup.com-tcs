@@ -1,0 +1,12 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:28 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$! The following annoyg abbreviated symbol defintion conflict warnings
+$! because the Mines login reexecutes my login.  Sigh.
+$ define TKB_SKIP_LOGIN TRUE 
+$ @SIS$DATA:[MINES]LOGIN.COM
+$ delete/symbol/global directory
+$ deassign TKB_SKIP_LOGIN
+%%E 1

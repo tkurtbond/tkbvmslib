@@ -1,0 +1,17 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:31 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$! swim.com -- start swim with a defaults file.
+$	swim := $swim_location:swim
+$	swim_file = ''		! Start with nothing
+$	if p1 .eqs. "" then goto start_swim
+$
+$	swim_file = f$parse (p1, "com_lib:.swm")
+$	if swim_file .nes. "" then goto start_swim
+$	
+$
+$ start_swim:
+$	swim 'swim_file'
+%%E 1

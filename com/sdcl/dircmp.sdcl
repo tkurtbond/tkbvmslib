@@ -1,0 +1,49 @@
+!> DIRCMP.SDCL -- Compare all files in one directory to those in another.
+###############################################################################
+### This program compares all the files in the directory specified in the
+### first argumment to the file with the same name in the directory specified
+### in the second argument.
+###############################################################################
+    wso :== write sys$output
+    wse :== write sys$error
+
+    src_dir = p1
+    cmp_dir = p2
+    errors = 0
+    if (src_dir .eqs. "") {
+        wse "No source directory specified!"
+        errors = errors + 1
+    }
+    if (cmp_dir .eqs. "") {
+        wse "No comparison directory specified!"
+        errors = errors + 1
+    }
+    if (errors .gt. 0) {
+        wse "Not all required arguments were specified!  Exiting...."
+        exit 2
+    }
+
+    wso "src_dir: ", src_dir
+    wso "cmp_dir: ", cmp_dir
+        
+
+    search_spec = f$parse (src_dir, "*.*")
+    if (search_spec .eqs. "") {
+        wse "dircmp: Nothing found for ", src_dir
+        exit 2
+    }
+    old_spec = search_spec
+
+    wso "search_spec: ", search_spec
+    wso "old_spec:    ", old_spec
+    repeat {
+        f = f$search (search_spec)
+        if ((f .eqs. "") .or. (f .eqs. old_spec)) break
+        version = f$parse (f,,, "VERSION")
+        f = f - version
+        wso "diff ", f, " ", cmp_dir
+        # In case the file isn't available in cmp_dir.
+        on error then continue
+        diff 'f 'cmp_dir
+    }
+    

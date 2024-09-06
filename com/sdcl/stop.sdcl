@@ -1,0 +1,83 @@
+###############################################################################
+#
+# Program:	S T O P . S D C L				
+# By:		C. Paul Bond					
+# Date:		December 12, 1985				
+# Version:	1.01						
+#						
+# This sdcl command file is used to display all normal processes that 
+# the current process has privilage to modify.  Then by selecting the 
+# number to the left of the process the image will be stoped.  This   
+# very handy for deleting processes when the current function of the  
+# running process needes to be known.                                 
+#
+###############################################################################
+verifying = 'f$verify(f$type(stop_verify) .nes. "")'
+!> STOP.SDCL -- Menu driven process stopper.
+true = (1 .eq. 1)			#Value of TRUE
+false = .not. true			#Value of FALSE
+debug = true				#Debug flag
+frmt = "!2UL  !12AS !6AS !8AS !3AS !20AS !AS" #Format for output
+heading = " #  User         Term   Pid      Sta Uic                  Image"
+display := write sys$output		#Write to terminal
+
+on control_y then goto the_end		#Control y trap
+on error then goto the_end		#Error trap
+
+do {
+  display ""
+  display ""
+  display heading
+
+  ##Display all normal processes
+
+  cnt = 0				#Number of process
+  id = ""				#Holder for Id numbers
+  pid = f$pid(id)			#Get first PID number
+
+  while (pid .nes. "") {
+    state = f$getjpi(pid, "STATE")
+
+    if (.not. (state .eqs. "HIB") .and. .not. (state .eqs. "COM")) {
+      mode = f$getjpi(pid, "MODE")
+
+      ##if (mode .nes. "OTHER") {
+        cnt = cnt + 1
+        pid_'cnt' = pid
+        username = f$getjpi(pid, "username")
+        terminal = f$getjpi(pid, "terminal")
+        uic      = f$getjpi(pid, "uic")
+        image    = f$parse(f$getjpi(pid, "imagname"),,,"name")
+        display f$fao(frmt, cnt, username, terminal, pid, state, uic, image)
+      ##}
+
+    }					#end if test for state
+    pid = f$pid(id)			#move to the next process
+
+  }					#end while (pid .nes. "")
+
+  display ""
+  inquire stp "Image number to stop (EXIT to quit)"
+  exit_flag = (f$locate(stp, "EXIT") .eq. 0) .and. (f$lenght(stp) .ne. 0)
+
+  ##Stop process if need be.
+  if (stp .nes. "") {
+    if (.not. exit_flag) {
+      stp = f$integer(stp)
+      if (.not. ((stp .gt. cnt) .or. (stp .lt. 1))) {
+        a$ = "pid_''stp'"
+        b$ = 'a$'
+	stop/id='b$'
+        display "Stoped process ''b$'"
+      } else {
+        display "Invalid Image number. Input a number between 1 and ''cnt'."
+      }
+    }					#end if (.not. exit_flag)
+  }					#stop not blank
+
+} while (.not. exit_flag)		#repeat until exit
+
+the_end:				#label for error trap and controly trap
+display ""
+display ""
+exit (1 .or. (f$verify(verifying) .and. 0))

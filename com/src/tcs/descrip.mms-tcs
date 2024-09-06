@@ -1,0 +1,44 @@
+%%s 6/1/22
+%%d D 1.2 06-Sep-24 12:19:45 tkb 2 1
+%%c Add targets to install LOGIN.COM in SYS$LOGIN:.
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:24 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+! DESCRIP.MMS - first stage DESCRIP.MMS for building .COMs from .SDCLs.
+!
+! Edit PROGRAMS.DAT to add finished programs to be installed.
+
+.SUFFIXES .GENMMS
+GENMMS=programs.genmms install.genmms rules.genmms
+
+all : $(GENMMS)
+        $(MMS)/desc=descrip_s2 all
+
+%%D 2
+install : $(GENMMS)
+%%E 2
+%%I 2
+install : $(GENMMS) install-login
+%%E 2
+        $(MMS)/desc=descrip_s2 install
+
+%%I 2
+install-login : sys$login:login.com
+
+sys$login:login.com : login.com
+        copy/log $< $@
+
+%%E 2
+clean : $(GENMMS)
+        $(MMS)/desc=descrip_s2 clean
+
+
+programs.genmms include.genmms rules.genmms : programs.dat
+        @tolist
+
+
+
+
+%%E 1

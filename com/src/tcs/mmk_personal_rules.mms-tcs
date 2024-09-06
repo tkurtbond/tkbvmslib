@@ -1,0 +1,20 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:28 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+ICONT=icont
+ICONX=iconx
+
+.SUFFIXES : .ICN .ICX .U1 .U2
+
+.ICN.ICX : 
+	$(ICONT) $(ICONTFLAGS) $(MMS$SOURCE)
+
+SDCL=sdcl
+.SUFFIXES : .SDCL
+
+.SDCL.COM :
+	$(SDCL) $(MMS$SOURCE)
+	
+%%E 1

@@ -1,0 +1,131 @@
+From:	MX%"WILLIAMS@AB.WVNET.EDU" 16-OCT-1992 15:50:48.17
+To:	TKB
+CC:	
+Subj:	Some EVE Routines that may be useful....
+
+Return-Path: <WILLIAMS@AB.WVNET.EDU>
+Received: from WVNVAXA.WVNET.EDU by MTNET2.WVNET.EDU (MX V3.0) with SMTP; Fri,
+          16 Oct 1992 15:50:26 EDT
+Received: from DECNET-MAIL (WILLIAMS@AB) by WVNVMS.WVNET.EDU (PMDF #3439 ) id
+          <01GQ0SRLC0QO9PLSNJ@WVNVMS.WVNET.EDU>; Fri, 16 Oct 1992 15:50:46 EDT
+Date: 16 Oct 1992 15:50:45 -0400 (EDT)
+From: Tom Williams <WILLIAMS@AB.WVNET.EDU>
+Subject: Some EVE Routines that may be useful....
+To: TKB@MTNET2.WVNET.EDU
+Message-ID: <01GQ0SRLCTO29PLSNJ@WVNVMS.WVNET.EDU>
+X-VMS-To: KURT
+MIME-version: 1.0
+Content-transfer-encoding: 7BIT
+
+!
+! Put this next code in the module_init routine...
+!
+          TWW_SORT_BUFFER := CREATE_BUFFER( "Sort");
+          SET( SYSTEM, TWW_SORT_BUFFER);
+          SET( NO_WRITE, TWW_SORT_BUFFER);
+          TWW_SORT_QUALIFIERS := "";
+
+
+PROCEDURE EVE_SORT( P1)
+
+          LOCAL				QUALIFIERS,
+                                        STUFF_TO_SORT,
+                                        WHERE_WE_WERE;
+
+          IF P1 <> ""
+          THEN
+             QUALIFIERS := P1;
+          ELSE
+             QUALIFIERS := TWW_SORT_QUALIFIERS;
+          ENDIF;
+          STUFF_TO_SORT := EVE$SELECTION( FALSE);
+          IF STUFF_TO_SORT = 0
+          THEN
+             TWW_EVE_SORT( CURRENT_BUFFER, QUALIFIERS);
+          ELSE
+             WHERE_WE_WERE := MARK( FREE_CURSOR);
+             ERASE( TWW_SORT_BUFFER);
+             POSITION( TWW_SORT_BUFFER);
+             MOVE_TEXT( STUFF_TO_SORT);
+             POSITION( WHERE_WE_WERE);
+             TWW_EVE_SORT( TWW_SORT_BUFFER, QUALIFIERS);
+             MOVE_TEXT( TWW_SORT_BUFFER);
+          ENDIF;
+ENDPROCEDURE
+
+PROCEDURE TWW_EVE_SORT( THE_BUFFER, QUALIFIERS)
+          LOCAL				FILE_SPEC,
+                                        ORIGINAL_LINE,
+                                        ORIGINAL_OFFSET,
+                                        OUTFILE,
+                                        SORTING_CURRENT_BUFFER;
+
+          OUTFILE := GET_INFO( THE_BUFFER, "OUTPUT_FILE");
+          IF OUTFILE = 0 THEN
+             OUTFILE := "SYS$SCRATCH:SORT.TMP";
+          ENDIF;
+          FILE_SPEC := FILE_PARSE( OUTFILE, "SYS$SCRATCH:SORT.TMP", "",
+                                   NODE, DEVICE, DIRECTORY, NAME, TYPE);
+          SORTING_CURRENT_BUFFER := (THE_BUFFER = CURRENT_BUFFER);
+          IF SORTING_CURRENT_BUFFER
+          THEN
+             ORIGINAL_OFFSET := CURRENT_OFFSET;
+             ORIGINAL_LINE := EVE$WHAT_LINE;
+          ELSE
+             ORIGINAL_POSITION := MARK( FREE_CURSOR);
+          ENDIF;
+          WRITE_FILE( THE_BUFFER, file_spec);
+          ERASE( THE_BUFFER);
+          !
+          ! Use EVE DCL buffer for the execution.
+          !
+          IF (GET_INFO (EVE$X_DCL_PROCESS, "TYPE") = UNSPECIFIED) OR
+             (EVE$X_DCL_PROCESS = 0)
+          THEN
+             EVE$X_DCL_PROCESS := CREATE_PROCESS (EVE$DCL_BUFFER, "$ SET NOON");
+             SET( EOB_TEXT, EVE$DCL_BUFFER, "$")
+          ENDIF;
+          SEND( "SORT " + FILE_SPEC + " " + FILE_SPEC + QUALIFIERS,
+                EVE$X_DCL_PROCESS);
+          READ_FILE( FILE_SPEC);
+          IF SORTING_CURRENT_BUFFER
+          THEN
+             EVE_LINE( STR( ORIGINAL_LINE), "");
+             MOVE_HORIZONTAL( ORIGINAL_OFFSET);
+          ELSE
+             POSITION( ORIGINAL_POSITION);
+          ENDIF;
+ENDPROCEDURE
+
+PROCEDURE EVE_CHECK_SPELLING( WHAT_WORD)
+
+          LOCAL				WORD_TO_CHECK;
+
+          IF EVE$PROMPT_STRING( WHAT_WORD, WORD_TO_CHECK, "Word: ",
+                                "Nothing to check")
+          THEN
+             EVE_SPAWN( "SPELL/CHECK " + WORD_TO_CHECK);
+          ENDIF;
+ENDPROCEDURE;
+
+PROCEDURE EVE_SPELL
+          LOCAL				FILE_SPEC,
+                                        ORIGINAL_LINE,
+                                        ORIGINAL_OFFSET,
+                                        OUTPUT_SPEC;
+
+          OUTPUT_SPEC := GET_INFO( CURRENT_BUFFER, "OUTPUT_FILE");
+          IF OUTPUT_SPEC = 0 THEN OUTPUT_SPEC := ""; ENDIF;
+
+          FILE_SPEC := FILE_PARSE( OUTPUT_SPEC, "SYS$SCRATCH:SPELL.TMP", "",
+                                   NODE, DEVICE, DIRECTORY, NAME, TYPE);
+          ORIGINAL_OFFSET := CURRENT_OFFSET;
+          ORIGINAL_LINE := EVE$WHAT_LINE;
+          WRITE_FILE( CURRENT_BUFFER, FILE_SPEC);
+          ERASE( CURRENT_BUFFER);
+          SPAWN( "SPELL " + FILE_SPEC);
+          READ_FILE( FILE_SPEC);
+          EVE_LINE( STR( ORIGINAL_LINE), "");
+          MOVE_HORIZONTAL( ORIGINAL_OFFSET);
+ENDPROCEDURE
+

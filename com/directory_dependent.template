@@ -1,0 +1,7 @@
+$       procedure_directory = f$parse(f$env ("PROCEDURE"),,,"DIRECTORY")
+$       if f$locate ("[MPLLIB", procedure_directory) .ne. f$length (procedure_directory)
+$       then
+$           write sys$output "Should run out of ML:"
+$       else
+$           write sys$output "Should NOT run out of ML:"
+$       endif

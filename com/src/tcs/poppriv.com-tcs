@@ -1,0 +1,62 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:29 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$ !> POPPRIV.COM -- pop old privs from stack and make them current.
+$
+$ 	inhibit_message = %x10000000
+$ 	error_exit = 2 .or. inhibit_message
+$
+$
+$ 	cur_privs = f$getjpi (0, "CURPRIV")
+$ 	msg = "Cur privs: " 
+$	write/sym sys$output msg, cur_privs
+$ 	depth = 1
+$ 	if p1 .nes. "" then depth = f$integer (p1)
+$	if (depth .eq. -1)
+$	then
+$	    write sys$output "Setting privs to default: NETMBX, TMPMBX"
+$	    set proc/priv=(noall, netmbx, tmpmbx)
+$	    exit
+$	endif
+$ 	if (depth .le. 0) .or. (depth .gt. tkb_priv_depth)
+$ 	then
+$	    write sys$error "Depth must be -1 or (> 0 and <= ", -
+		            tkb_priv_depth, -
+			    "), not ", depth, ". (p1 = """, p1, """)"
+$	    exit error_exit
+$ 	endif
+$ 	if (f$type (tkb_priv_depth) .nes. "INTEGER")
+$ 	then 
+$ 	    write sys$error "No privs to pop!"
+$	    exit error_exit
+$ 	endif
+$ 	if tkb_priv_depth .le. 0
+$ 	then
+$	    write sys$error "No privs to pop!"
+$	    exit error_exit
+$ 	endif
+$ !+
+$ ! Loop depth times, discarding privs, until last iteration, then 
+$ ! set privs.
+$ !-
+$ 10$:	
+$ 	newprivs = tkb_priv_stack_'tkb_priv_depth'
+$ 	delete/sym/glo tkb_priv_stack_'tkb_priv_depth'
+$ 	tkb_priv_depth == tkb_priv_depth - 1
+$	if (depth .gt. 1)
+$	then
+$	    msg = "Discarding privs:   "
+$	    write/sym sys$output msg, newprivs
+$	else
+$ 	    msg = "Reverting to privs: "
+$	    write/sym sys$output msg, newprivs
+$	    set proc/priv=(noall, 'newprivs')
+$	endif
+$	depth = depth - 1
+$	if depth .gt. 0 then goto 10$
+$ 19$:
+$
+$	exit 1 .or. inhibit_message
+%%E 1

@@ -1,0 +1,9 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:52 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+	movl #10,r11
+        movl (r11),r8
+        .end
+%%E 1

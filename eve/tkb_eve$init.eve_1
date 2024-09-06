@@ -1,0 +1,11 @@
+set keypad edt
+define key=f20 "two window"
+define key=f19 "one window"
+define key=f17 "other window"
+!
+define key=ctrl/g "get file"
+define key=ctrl/z "attach"
+!
+define key=gold/i "include"
+define key=gold/w "write"
+define key=gold/z "exit"

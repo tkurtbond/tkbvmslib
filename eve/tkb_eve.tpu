@@ -1,0 +1,704 @@
+!-----------------------------------------------------------------------------
+! Program:   	TKB_EVE.TPU
+! Written By:	Thomas Kurt Bond
+! Version:	v01-001
+! Date:		10-October-1988
+!
+! Description:	
+!
+! Add keybindings and useful procedures to EVE, including EVE_INDENT_RANGE,
+! EVE_KILL_BUFFER, auto-indentation.
+!
+! History:
+! Ver     When    Who  What
+! 01-001  110188  tkb  Customize EVE for TKB's eccentricites
+!-----------------------------------------------------------------------------
+!> TKB_EVE.TPU - TKB's additions to EVE.
+
+
+
+!-----------------------------------------------------------------------------
+!???: Notes
+! 1.  Need to add third parameter to all define_key's, explaining what they
+!     are, so SHOW KEY will at least give some reasonable answer.
+! 2.  Need Insert Here and Store Text and Do on the main keyboard.
+! 3.  Need to modify behavior of ctrl/k to match emacs more closely.
+!     (look at last key?)
+! 4.  Yank characters and words and lines and regions.
+!-----------------------------------------------------------------------------
+
+
+
+procedure tkb_module_ident
+    return "V01-001"
+endprocedure; ! tkb_module_ident
+
+
+
+procedure tkb_module_init
+    ! initialize variables for auto indenting
+    tkb$indenting := 0;
+endprocedure
+
+
+
+procedure eve_kill_buffer(buffer_parameter)
+    
+    local   
+        buffer_name,		! Local copy of buffer_parameter
+        saved_buffer,		! Current buffer
+	saved_mark,		! Current cursor position
+        saved_window,		! Current window
+        loop_buffer,		! Current buffer being checked in loop
+        loop_buffer_name,	! String containing name of loop_buffer
+        found_a_buffer,		! True if buffer found with same exact name
+        possible_buffer_name,	! Most recent string entered in choice buffer
+        possible_buffer,	! Buffer whose name is possible_buffer_name
+        how_many_buffers,	! Number of buffers listed in choice buffer
+        new_buffer;		! New buffer created when there is no match
+    
+    on_error
+        [TPU$_CONTROLC]:
+            eve$$restore_position (saved_window, saved_mark);
+            eve$learn_abort;
+            abort;
+        [OTHERWISE]:
+            eve$$restore_position (saved_window, saved_mark);
+    endon_error;
+    
+    if eve$check_bad_window
+    then
+        eve$message (EVE$_CURSINTEXT);
+        eve$learn_abort;
+        return (FALSE);
+    endif;
+    
+    if not (eve$prompt_string (buffer_parameter, buffer_name,
+            	          "Kill buffer [" + get_info(current_buffer, "name") 
+                              + "]: ",
+            	          "Using default"))
+    then
+        buffer_name := get_info(current_buffer, "name");
+    endif;
+    eve$cleanse_string (buffer_name);
+    
+    ! See if we already have a buffer by that name
+    
+    saved_mark := mark (FREE_CURSOR);
+    saved_window := current_window;
+    saved_buffer := current_buffer;
+    loop_buffer := get_info (BUFFERS, "first");
+    change_case (buffer_name, UPPER);	! buffer names are uppercase
+    erase (eve$choice_buffer);
+    
+    loop
+        exitif loop_buffer = 0;
+        loop_buffer_name := get_info (loop_buffer, "name");
+        if buffer_name = loop_buffer_name
+        then
+            found_a_buffer := 1;
+            how_many_buffers := 1;
+            exitif 1;
+        else
+            if buffer_name = substr (loop_buffer_name, 1, length (buffer_name))
+            then
+                eve$add_choice (loop_buffer_name);
+                possible_buffer := loop_buffer;
+                possible_buffer_name := loop_buffer_name;
+                how_many_buffers := how_many_buffers + 1;
+            endif;
+        endif;
+        loop_buffer := get_info (BUFFERS, "next");
+    endloop;
+    
+    change_case (buffer_name, LOWER);	! for messages
+    if found_a_buffer
+    then
+        eve$delete_buffer(loop_buffer);	! kill the buffer
+    else
+        if get_info (eve$choice_buffer, "record_count") > 0
+        then				! possibly ambiguous buffer
+            if how_many_buffers = 1
+            then			! only one, so
+                eve$delete_buffer(possible_buffer); ! kill the buffer
+            else
+                change_case (buffer_name, LOWER);
+                eve$display_choices
+            	(message_text (EVE$_AMBBUF, 0, buffer_name),
+    !** How do we get the synonym for the key that was defined to this command?
+            	 "kill buffer " + buffer_name);
+                eve$learn_abort;
+                return (FALSE);
+            endif;
+        else				! no such buffer
+            message("No such buffer: " + buffer_name);
+        endif;
+    endif;
+    
+    eve$set_status_line (current_window);
+    
+    return (TRUE);
+
+endprocedure ! eve_kill_buffer
+
+
+procedure tkb_forward_word		! move to start of next word
+    local   saved_mark;
+
+    on_error
+        [TPU$_CONTROLC]:
+	    eve$$restore_position (saved_mark);	! restore free cursor position
+	    eve$learn_abort;
+	    abort;
+        [OTHERWISE]:
+	    eve$$restore_position (saved_mark);
+    endon_error;
+
+    saved_mark := mark (FREE_CURSOR);
+    position (search (ANCHOR, FORWARD));
+
+    if mark (NONE) = end_of (current_buffer) then
+	move_vertical (1);	! force error return
+    endif;
+    if (eve$end_of_word = 0) then
+	move_horizontal (1);
+    endif;
+    if eve$in_prompting_window then
+	if eve$in_prompt then
+	    eve$move_prompt_end;
+	endif;
+	if mark (NONE) = end_of (current_buffer) then
+	    move_horizontal (-1);
+	endif;
+    endif;
+    return (TRUE);
+
+endprocedure ! tkb_forward_word
+
+
+
+procedure tkb_backward_word
+    local   saved_mark;
+
+    on_error
+        [TPU$_CONTROLC]:
+	    eve$$restore_position (saved_mark);	! restore free cursor position
+	    eve$learn_abort;
+	    abort;
+        [OTHERWISE]:
+	    eve$$restore_position (saved_mark);
+    endon_error;
+
+    saved_mark := mark (FREE_CURSOR);
+    position (search (ANCHOR, FORWARD));
+
+    if eve$in_prompting_window then
+	if eve$in_prompt then
+	    position (LINE_BEGIN);
+	endif;
+    endif;
+    if mark (NONE) = beginning_of (current_buffer) then
+	move_vertical (-1);	! force error return
+    endif;
+    if (eve$start_of_word = 0) and 
+	(mark (FREE_CURSOR) <> beginning_of (current_buffer)) then
+	move_horizontal (-1);
+    endif;
+    if eve$in_prompting_window then
+	if mark (FREE_CURSOR) = beginning_of (current_buffer) then
+	    eve$move_prompt_end;
+	endif;
+    endif;
+    return (TRUE);
+
+endprocedure ! tkb_forward_word
+
+
+
+!+
+! tkb_find_indent.
+! 
+! Description:
+!   Find out how many character positions of whitespace the current line has 
+!   before it has a non-whitespace character.
+!-
+procedure tkb_find_indent
+  local
+    indent,    			! indentation of the current line
+    line;
+  
+  if (end_of(current_buffer) = beginning_of(current_buffer)) then
+    return 0;
+  endif;
+  
+  line := current_line;
+  if length(line) = 0 then
+    return 0;
+  endif;                                      
+    
+  indent := 0;
+  loop
+    ! exit if not a whitespace character
+    exitif (substr(line, 1, 1) <> " ") and (substr(line,1,1) <> ascii(9));
+    if substr(line, 1, 1) = ascii(9) then 
+      ! account for leading tab, add number need to get to next tab column.
+      indent := indent + ((((indent + 8) / 8) * 8) - indent)
+    else	! add one for a space
+      indent := indent + 1; 
+    endif;
+    line := substr(line, 2, length(line) - 1);
+  endloop;
+  return(indent);
+              
+endprocedure ! tkb_find_indent
+
+
+
+! tkb_string.
+!
+! Description:
+!   Returns a string containing n copies of instring.
+!-
+procedure tkb_string(instring, n)
+  local 
+    i, 		! loop counter
+    s;		! temporary string
+  
+  i := 0;
+  s := "";
+  loop
+    exitif i >= n;
+    s := s + instring;
+    i := i + 1;
+  endloop;
+  return ( s );
+  
+endprocedure ! tkb_string
+
+
+
+!+
+! tkb_fix_whitespace.
+!
+! Description:
+!   Removes tabs from beginnings of lines, making it all spaces.
+!-
+procedure tkb_fix_whitespace
+  local
+    c, i, n, current_pos;          
+
+  move_horizontal(-current_offset);  ! move to beginning of the line
+  i := 0;      
+  loop                    
+    c := current_character;
+    exitif (c <> " ") and (c <> ascii(9)); ! exit if not whitespace 
+    if c = ascii(9) then	! tab, replace with spaces
+      n := (8 - (i - ((i / 8) * 8)));	! number of spaces to next tab column
+      erase_character(1);	! erase the tab
+      ! put in enough spaces to get to the next tab column
+      copy_text(tkb_string(" ", n));    
+    endif;
+    move_horizontal(1);		! go to the next character
+    i := i + 1;
+  endloop;
+  move_horizontal(-current_offset); ! move to the beginning of the line
+  
+endprocedure ! tkb_fix_whitespace
+
+
+
+!+
+! tkb_choices.
+! 
+! Description:
+!   Given a prompt, some choices, and a delimiter, return a valid choice.
+!   the prompt string must have the choices sperated by the delimiter and
+!   have a leading and trailing delimiter, like this:
+!     "/choice1/choice2/choice2/"
+!   The prompt string should tell what the choices are.
+!   If singlechar is true, the first character of the input is used, otherwise
+!   all characters are significant.
+!+
+procedure tkb_choices(prompt, choices_list, delimiter, singlechar)
+  local
+    c, s, choices;
+            
+  choices := choices_list;
+  edit(choices, collapse, lower); ! lowercase for comparison.
+  loop
+    c := read_line(prompt);
+    edit(c, collapse, lower); ! lowercase for comparison
+    if singlechar then        ! Get first letter
+      c := substr(c, 1, 1);     
+    endif;
+    if index(choices, delimiter + c + delimiter) <> 0 then
+      exitif true;	! found a match, exit the loop
+    else
+      message("`" + c + "' is not a valid choice");
+    endif;
+  endloop;
+  return c;
+
+endprocedure ! tkb_choices
+
+
+
+!+
+! eve_set_auto_indent
+!
+! Description:
+!   Turn the auto indenting on and off.
+!+
+procedure eve_set_auto_indent
+
+  if tkb$indenting = true then  ! auto-indenting, so turn it off
+    tkb$indenting := false;
+    message("Auto Indentation ended");
+  else                          ! not auto-indenting, so turn it on
+    tkb$indenting := true;
+    message("Auto Indentation started");
+  endif;
+
+endprocedure ! eve_set_auto_indent
+
+
+
+!+
+! eve$split_line.
+!
+! Description:
+!    Redefine eve$spilt_line to allow auto-indenting
+!-
+procedure eve$split_line
+  local
+    loop_counter,
+    indentation;
+
+on_error
+    [OTHERWISE]:
+endon_error;
+
+  if not tkb$indenting then     ! just make a new line
+    split_line;
+  else                          ! indent the new line
+    if (mark(none) = end_of(current_buffer)) and
+       (mark(none) <> beginning_of(current_buffer)) then
+      move_horizontal(-1);
+    endif;
+    indentation := tkb_find_indent;
+    split_line;
+    copy_text(tkb_string(" ", indentation));
+  endif;
+
+endprocedure ! eve$split_line
+
+
+
+!+
+! eve_indent_range. 
+! Key: Gold CTRL/I
+!
+! Description:
+!   indentstr a string containing the number of columns
+!   the select range is to be indented.  If null, prompted for a value.
+!   The amount can be negative, in which case the select range is undented
+!   (the opposite of indented).
+!-
+procedure eve_indent_range(indentstr)
+  local
+    b_mark, e_mark, t_range, origin, amountstr, amount, s, chop_all_lines;
+             
+  t_range := eve$selection(TRUE);
+  if t_range <> 0 then
+    chop_all_lines := false;
+    amountstr := indentstr;
+    edit(amountstr, trim);
+    if amountstr = "" then
+      amountstr := read_line("Amount to Indent: ");
+      edit(amountstr, trim);
+    endif;
+    if amountstr <> "" then
+      amount := int(amountstr);
+      origin := mark(none);
+      position(end_of(t_range));
+      e_mark := mark(none);
+      position(beginning_of(t_range));
+      move_horizontal(-current_offset); ! position at beginning of line;
+      b_mark := mark(none);
+      if b_mark = e_mark then
+        position(origin);
+        message("Nothing to Indent");
+        return;
+      endif;               
+      loop   
+        i := tkb_find_indent;
+        if (amount < 0) and (-amount > i) and not chop_all_lines then
+          s := tkb_choices("Delete non-whitespace? a)ll, c)urrent, " 
+             + "q)uit, or s)kip line? ", "/a/c/q/s/", "/", 1);
+          case s from "a" to "s"
+            ["a"] : 
+              chop_all_lines := true;
+              message("Deleting beginnings of all lines");
+            ["c"] : 
+              tkb_indent(amount);
+              message("Continuing");
+            ["q"] : 
+               message("Quiting");
+               exitif 1;
+            ["s"] : message("Skipping line");
+            [inrange] : message("Error, incorrect option");
+            [outrange] : message("Error, incorrect option");
+          endcase;
+        else
+          tkb_indent(amount);
+        endif;                                     
+        move_vertical(1);
+        exitif mark(none) >= e_mark;
+        exitif mark(none) = end_of(current_buffer);
+      endloop;
+    endif;
+  else
+    message("No Select Active");
+  endif;
+  position(origin);
+
+endprocedure ! eve_indent_range
+
+
+
+!+
+! tkb_indent.
+!
+! Description:
+!   support routine for eve_indent_range
+!-
+procedure tkb_indent(amount)
+  local
+    loop_counter;
+
+  tkb_fix_whitespace;
+  move_horizontal(-current_offset);
+  if amount < 0 then
+    erase_character(-amount);
+  else
+    copy_text(tkb_string(" ", amount));
+  endif;
+  move_horizontal(-current_offset);
+
+endprocedure ! tkb_indent
+
+
+
+!-----------------------------------------------------------------------------!
+!                                                                             !
+!Qualifiers Section:                                                          !
+!   The following procedures are used by the interface program to process     !
+!   qualifiers.  Generally, the program calls one of these procedures using   !
+!   tpu$do_command().                                                         !
+!                                                                             !
+!-----------------------------------------------------------------------------!
+
+
+
+!+
+! tkb_get_buffer.
+!
+! Description:
+!   process /BUFFER qualifier, get a file into a buffer.
+!-
+procedure tkb_get_buffer(file_name)
+  local 
+    old_buffer_name;
+  
+  old_buffer_name := get_info(current_buffer, "name");
+  eve_get_file(file_name);
+  eve_buffer(old_buffer_name);
+  
+endprocedure ! tkb_get_buffer
+
+
+
+!+
+! tkb_include_file.
+!
+! Description:
+!   process /INCLUDE qualifier, include a file in the current buffer.
+!-
+procedure tkb_include_file(file_name)
+  local
+    old_position;
+  
+  position(end_of(current_buffer));
+  eve_include_file(file_name);
+  position(beginning_of(current_buffer));
+
+endprocedure ! tkb_include_file
+    
+
+
+!+
+! tkb_getlisting
+! 
+! Description:
+! This procedure gets a listing file if there is one, splitting the screen
+! into two windows with the source file in the top and the listing file in
+! the bottom; otherwise it tells the user that no file found
+!-
+procedure tkb_getlisting(file_name)
+                                                                  
+  local tempfile, listingfile, listingtype, listingname, listingdirectory, 
+    listingdevice, tkb$debug;
+  
+  listingfile := file_parse(file_name);
+  listingname := file_parse(listingfile, "", "", name);
+  listingtype := file_parse(listingfile, "", "", type);
+  if ((listingname = "") and (listingtype = ".")) then 
+    ! no value specified on command line, so take it from file edited
+    listingfile := get_info(command_line, "file_name");
+    listingfile := file_parse(listingfile, "", "", name) + ".LIS";
+  else
+    listingtype := file_parse(listingfile, "", "", type);
+    if listingtype = "" then 
+      listingtype := ".LIS";
+    endif;
+    listingname := file_parse(listingfile, "", "", name);
+    if listingname = "" then
+      listingname := 
+        file_parse(get_info(command_line, "file_name"), "", "", name);
+    endif;
+    listingdirectory := file_parse(listingfile, "", "", directory);
+    listingdevice    := file_parse(listingfile, "", "", device);
+    listingfile := listingdevice + listingdirectory + listingname + listingtype;
+    listingfile := file_parse(listingfile);
+  endif;
+  
+  listingfile := file_search(listingfile);
+  if listingfile <> "" then
+    eve_two_windows;
+    eve_get_file(listingfile);
+    set (no_write, current_buffer);
+  else
+    message(fao("Listing File not found: !AS", file_name));
+  endif;
+
+endprocedure ! tkb_getlisting
+
+
+
+!+
+! tkb_get_sysbuf
+!
+! Description:
+!   process /SYSBUFF qualifier, include a file into a nowrite buffer.
+!-
+procedure tkb_get_sysbuf(file_name)
+  local
+    old_buffer_name;
+  
+  old_buffer_name := get_info(current_buffer, "name");
+  eve_get_file(file_name);
+  set(no_write, current_buffer);
+  eve_buffer(old_buffer_name);
+
+endprocedure ! tkb_get_sysbuf
+
+
+
+procedure tkb_get_file_readonly(file_name)
+    local temp_name;
+    
+    temp_name := file_name;
+    if temp_name = "" then 
+        temp_name := read_line("Get File Read-Only: ");
+        if temp_name = "" then
+            return FALSE;
+        endif;
+    endif;
+    if eve_get_file(temp_name) then 
+        set(no_write, current_buffer);
+        eve$set_status_line(current_window);
+        return TRUE;
+    else 
+        message("File not found");
+        return FALSE;
+    endif;
+    
+endprocedure ! tkb_get_file_readonly
+
+
+
+procedure tkb_define_keys
+    ! define keys
+    eve_set_keypad_edt;
+    eve_set_cursor_bound;
+    eve_set_nowrap;
+!    set(shift_key, gs_key);		! ctrl/]
+    
+    ! Alpha by key, ctrl, gold ctrl, gold, keypad
+
+    ! ctrl
+    define_key("eve_select",		null_key);
+   ! third parameter is so key is synonym for <FIND> (key E1). See EVE$CORE.TPU
+    define_key("eve_find('')",		us_key, "find");
+    define_key("eve_quote",		rs_key);
+    define_key("eve_start_of_line", 	ctrl_a_key);
+    define_key("eve_move_left", 	ctrl_b_key);
+    define_key("eve_erase_character", 	ctrl_d_key);
+    define_key("eve_move_right", 	ctrl_f_key);
+    define_key("tkb_getlisting(read_line('Get Listing File: '))",
+                                        ctrl_g_key);
+    define_key("eve$edt_delete_eol",	ctrl_k_key);
+    define_key("eve_refresh", 		ctrl_l_key);
+    define_key("eve_move_down",		ctrl_n_key);
+    define_key("eve_move_up", 		ctrl_p_key);
+    define_key("eve_next_screen",	ctrl_v_key);
+    define_key("eve_remove",		ctrl_w_key);
+    define_key("eve_attach('')",	ctrl_z_key);
+    
+    ! gold
+    define_key("eve_buffer('')", 	key_name("B", shift_key));
+    define_key("tkb_backward_word", 	key_name("B", shift_key));
+    define_key("eve_capitalize_word",   key_name("C", shift_key));
+    define_key("eve_erase_word", 	key_name("D", shift_key));
+    define_key("eve_get_file('')",	key_name("F", shift_key));
+    define_key("tkb_forward_word",	key_name("F", shift_key));
+    define_key("eve_include_file('')",	key_name("I", shift_key));
+    define_key("eve_go_to('')",		key_name("J", shift_key));
+    define_key("eve_lowercase_word",    key_name("L", shift_key));
+    define_key("eve_other_window", 	key_name("O", shift_key));
+    define_key("eve_quit", 		key_name("Q", shift_key));
+    define_key("eve_write_file('')",	key_name("S", shift_key));
+    define_key("eve_uppercase_word", 	key_name("U", shift_key));
+    define_key("eve_previous_screen",	key_name("V", shift_key));
+    define_key("eve_exit",		key_name("Z", shift_key));
+    define_key("eve_mark('')", 		key_name("/", shift_key));
+    define_key("eve_indent_range('')",	key_name("^", shift_key));
+    define_key("eve_previous_screen",   key_name(up,  shift_key));
+    define_key("eve_next_screen",	key_name(down, shift_key));
+    define_key("eve_top",		key_name("<", shift_key));
+    define_key("eve_bottom",		key_name(">", shift_key));
+    define_key("eve_replace('','')",	key_name("%", shift_key));
+
+    ! gold ctrl
+    define_key("eve_go_to('')", 	key_name(null_key, shift_key));
+    define_key("eve_wildcard_find('')",	key_name(us_key, shift_key));
+    define_key("eve_show_buffers", 	key_name(ctrl_b_key, shift_key));
+    define_key("eve_buffer('')",	key_name(ctrl_b_key, shift_key));
+    define_key("spawn(read_line('$ '))",key_name(ctrl_d_key, shift_key));
+    define_key("eve_get_file('')",	key_name(ctrl_f_key, shift_key));
+    define_key("eve_set_auto_indent",   key_name(ctrl_i_key, shift_key));
+    define_key("eve_kill_buffer('')", 	key_name(ctrl_k_key, shift_key));
+    define_key("eve_show_buffers", 	key_name(ctrl_l_key, shift_key));
+    define_key("tkb_get_file_readonly('')",
+					key_name(ctrl_r_key, shift_key));
+
+    ! numeric
+    define_key("eve_do('')",		pf1);
+    
+    ! Function keys
+    define_key("eve_one_window", 	f17);
+    define_key("eve_two_windows", 	f18);
+    define_key("eve_split_window", 	f19);
+    define_key("eve_delete_window",	f20);
+
+endprocedure ! tkb_define_keys

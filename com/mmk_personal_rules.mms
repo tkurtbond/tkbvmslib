@@ -1,0 +1,14 @@
+ICONT=icont
+ICONX=iconx
+
+.SUFFIXES : .ICN .ICX .U1 .U2
+
+.ICN.ICX : 
+	$(ICONT) $(ICONTFLAGS) $(MMS$SOURCE)
+
+SDCL=sdcl
+.SUFFIXES : .SDCL
+
+.SDCL.COM :
+	$(SDCL) $(MMS$SOURCE)
+	

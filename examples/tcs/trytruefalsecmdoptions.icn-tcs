@@ -1,0 +1,20 @@
+%%s 0/0/0
+%%d D 1.1 21-Aug-24 13:38:51 tkb 1 0
+%%c Show the most understandable way to set true/false options from the command
+%%c line.
+%%T
+%%I 1
+link options
+
+global do_n,                            # Defaults to no.
+  do_y                                 # Defaults to yes.
+
+procedure main (args)
+  local opts
+  opts := options(args, "ny")
+  do_n := if \opts["n"] then 1 else &null # Use this form to default to no
+  do_y := if \opts["y"] then &null else 1 # Use this form to default to true
+  if \do_n then write ("n is true") else write ("n is false")
+  if \do_y then write ("y is true") else write ("y is false")
+end # main
+%%E 1

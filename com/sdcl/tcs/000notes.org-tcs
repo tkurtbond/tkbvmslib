@@ -1,0 +1,26 @@
+%%s 9/1/1
+%%d D 1.2 13-Aug-24 15:07:42 tkb 2 1
+%%c Add exit statuses and some notes on programs that may be unfinished.
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 14:23:37 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+%%I 2
+* Exit Statuses
+    EXIT_QUIET   = %x10000000
+    EXIT_FAILURE = 2 .or. EXIT_QUIET
+    EXIT_SUCCESS = 1
+%%E 2
+* All the *DIRSIZE*.SDCL and [.DIRSIZE]*.SDCL files are incomplete.
+%%D 2
+They need revision, and they are not under revision control yet.
+%%E 2
+%%I 2
+They need updating.  The version in revision control may not work right.
+* Were these ever finished?
+** FLATTEN.SDCL
+** GETSYI.SDCL
+
+%%E 2
+%%E 1

@@ -1,0 +1,187 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 11:56:21 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+###############################################################################
+#                      
+#      Program:        D E L D I R . S D C L 
+#      Written By:     Thomas Kurt Bond
+#      Version:        1.50a
+#      Date:           14 Dec 1987
+#
+# Description:	This program is a recursive command procedure that deletes
+# a directory and every file in it, including all of its subdirectories
+# and any files they might contain.  
+# 
+# Format: 
+# @deldir [options ...] [directory_file]
+#
+# Valid Options: 
+# -log     -- Write name of each file deleted to the screen.
+# -confirm -- Have user confirm each file is to be deleted.
+# -exclude -- Exclude these files from being deleted.  Caution: if a directory
+#             file is specified, that file will not be deleted, but any
+#             files in that directory will be deleted if they are not listed.
+#             Can be a parenthesized, comma concatenated list of file
+#             specifictions.
+#
+# Parameters:
+# directory_files
+#          -- Directory file or files to be deleted.  Can be a comma or
+#             plus sign concatenated list.  The file names must not be
+#             seperated by spaces.
+#
+# History:
+# Ver     When    Who  What
+# 1.00a   122386  tkb  Initial Version
+# 1.50a   121487  tkb  Make it work on a comma or plus concatenated list
+#                      of directory names.
+# 2.60    050589  tkb  Add verify subversion and convert to new SDCL
+###############################################################################
+   verifying = 'f$verify(f$type(deldir_verify) .nes. "")'
+   !> DELDIR.SDCL -- Delete a directory and all files in it.
+   wso   = "write sys$output"
+   inq   = "inquire/nopun"
+   true  = (1 .eq. 1)
+   false = .not. true
+   debug = false
+
+   verbose_flag = FALSE
+   
+   ##Valid Options List (in uppercase because dcl upcases command line)
+   opt_list = "/HELP/LOG/CONFIRM/EXCLUDE/VERBOSE/"
+   opt_list_len = f$length( opt_list )
+   del_opt = ""
+   
+   i = 1
+   ##Process options till none left
+   while (f$extract( 0, 1, p'i' ) .eqs. "-") {
+      opt = p'i'
+      which = f$extract( 1, 3, opt )
+      ok = (f$locate( "/" + which, opt_list ) .ne. opt_list_len) .and. \
+           (which .nes. "")
+      if (ok) 
+         gosub OPT$'which'
+      else
+         write sys$output "Invalid Option: ''opt'"
+      i = i + 1
+   }
+                   
+   ##No more options, so p'i' is the filename or list of file names
+   list = p'i'
+   ##Deal with omitted file name
+   if (list .eqs. "") 
+      inq list "_Directory File: "
+   if (list .eqs. "") 
+      exit
+   
+   ##add leading "," for f$element()
+   list = "," + f$edit( list, "lowercase,collapse" ) 
+   
+   ##Get rid of all the plus signs, replace with comma so f$element() works
+   p = f$locate( "+", list )		#find location of plus sign in list
+   length = f$length( list )      
+   while (p .ne. length) {		#plus sign in list
+      list[p * 8, 8] = 44		#overlay "+" with "," (ascii 44)
+      p = f$locate( "+", list )		#find next plus sign
+   }
+
+   n = 1				#start with first element
+   dir_name = f$element( n, ",", list )
+
+   ##while elements exist (f$element() returns delimeter after end of list)
+   while (dir_name .nes. ",") {
+      call delete_dir 'dir_name'
+      n = n + 1				#get the next element
+      dir_name = f$element( n, ",", list )
+   }
+
+The_End:
+   exit (1 .or. (f$verify(verifying) .and. 0))
+
+###############################################################################
+###Subroutines
+###############################################################################
+
+
+# Delete_Dir -- recursive subroutine to delete directories.
+delete_dir: subroutine
+   if (debug) wso "Entering Delete_Dir: ''p1'"
+   rawname = p1
+   rawname = f$parse( rawname )
+   rawname = f$search( rawname )
+   if (rawname .eqs. "") {
+      wso f$fao("deldir: Directory not found, !AS", p1)
+   } else {
+      disk    = f$parse( rawname, , , "device" )
+      dirspec = f$parse( rawname, , , "directory" )
+      name    = f$parse( rawname, , , "name" )
+      current_dir = disk + dirspec - "]" + "." + name + "]"
+      dirfile = f$search( current_dir + "*.dir;*" )          
+      if (debug .or. verbose_flag) 
+         wso "Current_dir: ", current_dir
+      while (dirfile .nes. "") {
+         call delete_dir 'dirfile'
+         dirfile = f$search( current_dir + "*.dir;*" )
+      }
+      if (f$search(current_dir + "*.*") .nes. "") {
+         if (debug .or. verbose_flag) 
+            wso "Deleting files: ", current_dir + "*.*;*"
+         if (.not. debug)
+            delete'del_opt' 'current_dir'*.*;*
+      }
+      if (debug  .or. verbose_flag)
+         wso "Deleting root dir: ", rawname
+      if (.not. debug) {
+         set file/prot=(o:rwed) 'rawname'
+         delete'del_opt' 'rawname'	#delete current root directory
+      }
+   }   
+   
+endsubroutine				#delete_dir
+
+
+###############################################################################
+###Options Section -- gosubs which process options specified on the command
+###		      line.
+###############################################################################
+
+# -H, -HELP option
+OPT$h:
+OPT$hel:
+    copy sys$input sys$error
+    // usage: deldir [-option ...] DIRSPEC
+    //
+    // Delete the directory specified in DIRSPEC.
+    //
+    // Options:
+    //    -h, -help            This message.
+    //	  -log		       Log files deleted.
+    //	  -confirm	       Confirm deletions.
+    //	  -exclude=FILESPEC    Exclude files from deletion.
+    //	  -verbose	       Display verbose messages.
+
+# -LOG option
+OPT$log:
+   del_opt = del_opt + "/log"
+   return
+   
+# -CONFIRM option
+OPT$con:
+   del_opt = del_opt + "/confirm"
+   return
+
+# -EXCLUDE option
+OPT$exc:
+   p = f$locate("=", opt)
+   l = f$length(opt)
+   if (p .ne. l) 
+      del_opt = del_opt + "/exclude" + f$extract(p, l, opt)
+   return
+
+# -VERBOSE option
+OPT$ver:
+   verbose_flag = TRUE
+   return
+%%E 1

@@ -1,0 +1,17 @@
+!------------------------------------------------------------------------------
+!> CHANGE_CLI.CLD -- Command Language Definition for CHANGE.BAS
+!------------------------------------------------------------------------------
+module change_cli
+define verb change
+    parameter p1,
+        label = input,
+	prompt = "Input File: ",     ! Optional, so not really necessary
+	value(type = $file)
+    parameter p2,
+        label = output,
+	prompt = "Output File: ",    ! Optional, so not really necessary
+	value(type = $file)
+    qualifier upper
+    qualifier lower
+    disallow upper and lower
+    

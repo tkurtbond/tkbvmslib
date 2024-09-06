@@ -1,0 +1,14 @@
+Todd's PC			129.71.42.20	Todd's PC
+ab.wvnet.edu			129.71.45.20
+adanet.wvnet.edu		129.71.42.6	ASV3 (Sun)
+asv2.wvnet.edu			129.71.42.1	ASV2 (DG)
+euclid.dne.wvnet.edu		129.71.49.2	Sun at D&E
+mntnet4.wvnet.edu		129.71.42.99	Fake, Mountainnet LAN fileserv
+mntnet_mail.wvnet.edu		129.71.42.50	Mountainnet mail server
+mtnet2.wvnet.edu		129.71.42.3
+namserv.wvnet.edu		129.71.1.1
+nexus.yorku.ca			130.63.9.66
+our cisco router		129.71.42.200	Our cisco router
+prep.ai.mit.edu			18.71.0.38
+proteon.wvnet.edu		129.71.1.11	Gateway
+source.asset.com		192.131.125.10

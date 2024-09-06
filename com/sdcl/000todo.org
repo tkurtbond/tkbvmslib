@@ -1,0 +1,10 @@
+* 2024-05-30: sdcl.sdcl: Add -x?
+Check how COMPILER.SDCL does it.
+* 2024-08-13: todirfile.sdcl complains about undefined symbols
+
+$ del/sym/glo todirfile_value
+%DCL-W-UNDSYM, undefined symbol - check validity and spelling
+$ del/sym/glo todirfile_status
+%DCL-W-UNDSYM, undefined symbol - check validity and spelling
+
+Need to check if they are defined before deleting them.

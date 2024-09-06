@@ -1,0 +1,81 @@
+!-*- indented-text -*-
+
+module tags ident "TAGS V0.1"
+
+variable tags_table_buffer
+
+
+procedure get_tags_table(file_name)
+    local old_buffer;
+    
+    tags_table_buffer := create_buffer("*tags*");
+    set(system, tags_table_buffer);
+    set(no_write, tags_table_buffer);
+    old_buffer := current_buffer;
+    position(tags_table_buffer);
+    read_file(file_name);
+    position(old_buffer);
+    set(modifiable, tags_table_buffer, off);
+
+endprocedure ! get_tags_table
+
+
+procedure visit_tags_table
+    local file_name;
+
+    file_name := read_line("Tags Table: ");
+    get_tags_table(file_name);
+endprocedure ! visit_tags_table
+
+
+procedure find_tag(tag)
+    local cb, found_range, start_pos, p1, p2, line_no, file_name, full_tag;
+
+    cb := current_buffer;
+    position(beginning_of(tags_table_buffer));
+    found_range := search_quietly(tag, forward);
+    if found_range = 0 then
+        message("tag not found: " + tag);
+        position(cb);
+    else
+        position(beginning_of(found_range));
+        position(line_begin);
+	start_pos := mark(none);
+        message("tag found: " + current_line);
+	found_range := search_quietly(ascii(127), forward);
+	position(beginning_of(found_range));
+        move_horizontal(-1);
+	full_tag := str(create_range(start_pos, mark(none)));
+	message("Full Tag: " + full_tag);
+	move_horizontal(2);	!move over DEL
+	p1 := mark(none);
+        found_range := search_quietly(",", forward);
+	position(end_of(found_range));
+	move_horizontal(-1);
+	p2 := mark(none);
+	line_no := int(str(create_range(p1, p2)));
+	message("Line No: " + str(line_no));
+	found_range := search_quietly(ascii(12), reverse);
+        position(end_of(found_range));
+	move_vertical(1);
+	position(line_begin);
+        message("File Line: " + current_line);
+	p1 := mark(none);
+        found_range := search_quietly(",", forward);
+	position(beginning_of(found_range));
+	move_horizontal(-1);
+	file_name := str(create_range(p1, mark(none)));
+	message("File Name: " + file_name);
+	eve_get_file(file_name);
+	position(line_no);
+    endif;
+endprocedure; ! find_tag
+
+
+
+
+!+++
+! Initializing statements go here
+!---
+
+endmodule

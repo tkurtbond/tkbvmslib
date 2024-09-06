@@ -1,0 +1,16 @@
+%%s 0/0/0
+%%d D 1.1 16-Aug-24 09:53:50 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+#include <stdlib.h>
+#include <stdio.h>
+
+int
+main (int argc, char **argv)
+{
+  const int n = 10;
+  printf ("const int n = %d\n", n);
+  exit (EXIT_SUCCESS);
+}
+%%E 1

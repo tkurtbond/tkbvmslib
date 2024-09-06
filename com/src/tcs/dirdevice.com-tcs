@@ -1,0 +1,26 @@
+%%s 1/0/14
+%%d D 1.2 21-Aug-24 11:44:38 tkb 2 1
+%%c Only search devices that are mounted.
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:24 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$!> DIRDEVICE.COM - Do a directory for filespec P1 on every mounted disk.
+$! Usage: @dirdevice term_interface*.*
+$	filespec = p1
+$       set proc/priv=readall
+$ 10$:
+$	device_name = f$device (, "DISK")
+$	if device_name .eqs. "" then goto 19$
+%%I 2
+$       if .not. f$getdvi (device_name, "MNT") then goto 10$
+%%E 2
+$	write sys$output "Searching device ", device_name
+$	if .not. f$getdvi (device_name, "MNT") then goto 10$
+$	!dirspec = f$parse ("[000000...]TERM_INTERFACE*.*", device_name,,, "SYNTAX_ONLY")
+$	dirspec = f$parse ("[000000...]"  + filespec, device_name,,, "SYNTAX_ONLY")
+$	directory/date=mod 'dirspec'
+$	goto 10$
+$ 19$:
+%%E 1

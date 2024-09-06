@@ -1,0 +1,112 @@
+###############################################################################
+#
+#      Program:        M A K E C O M M A N D . S D C L
+#      Written By:     Thomas Kurt Bond
+#      Version:        2.00a
+#      Date:           13-Dec-1986
+#
+# Description:  Makes a foreign command symbol from a specified file and an
+# optional symbol specifier. If no symbol is specified, the file name is
+# used.
+#
+# Parameters:
+# p1 -- File to make foreign command for.
+# p2 -- Optional symbol to use for the foreign command.
+#
+# Options:
+# -f -- make a foreign command (default)
+# -c -- make a command to execute a command file
+# -i -- make a command to execute an Icon icode file
+#
+# History:
+# Ver     When    Who  What
+# 1.00a   121386  tkb  Inital Version.
+# 2.0     053089  tkb  Change to new SDCL syntax and improve verify handling
+# 2.1     072589  tkb  Add -i option
+###############################################################################
+   verifying = 'f$verify(f$type(makecommand_verify) .nes. "")'
+   !> MAKECOMMAND.SDCL -- Make foreign command symbol for a program.
+
+   i = 1                                #start with first parameter
+   ## Process options till none left
+   while (f$extract(0, 1, p'i') .eqs. "-") {
+      opt = f$extract(1, 1, p'i')
+      if (opt .eqs. "C") {
+         command_ext  = ".com"
+         command_type = "@"
+      } else if (opt .eqs. "F") {
+         command_ext  = ".exe"
+         command_type = "$"
+      } else if ((opt .eqs. "H") .or. (opt .eqs. "?")) {
+         goto usage
+      } else if (opt .eqs. "I") {
+          command_ext = ".icx"
+          command_type = "''iconx' "
+      } else {
+         write sys$error p'i', ": incorrect option"
+         exit (1 .or. (f$verify(verifying) .and. 0))
+      }
+      i = i + 1
+   }
+
+   iplus = i + 1
+   program = p'i'
+   command = p'iplus'
+
+   if (f$type(command_ext) .eqs. "") {
+      # No command type has been forced.
+      filetype = f$parse (program,,, "TYPE")
+      if (filetype .eqs. ".COM") {
+         command_ext  = ".com"
+         command_type = "@"
+      } else if (filetype .eqs. ".EXE") {
+         command_ext  = ".exe"
+         command_type = "$"
+      } else if (filetype .eqs. ".ICX") {
+          command_ext = ".icx"
+          command_type = "''iconx' "
+      } else {
+         ##set up default values
+         command_ext  = ".exe"
+         command_type = "$"
+      }
+   }
+   
+   if (program .eqs. "")
+      inquire/nopun program "Program: "
+   if (program .eqs. "")
+      exit (1 .or. (f$verify(verifying) .and. 0))
+   if (command .eqs. "")
+      command = f$parse(program, , , "name")
+   # Change dashes in the command name to underscores, because DCL symbols
+   # do not allow dashes.
+   repeat {
+      pos = f$locate ("-", command)
+      if (pos .ge. f$length (command)) break
+      command = f$extract (0, pos, command) + "_" \
+              + f$extract (pos + 1, -1, command)
+   }
+        
+   if (command .eqs. "")
+      command = "try"
+   'command' == command_type + f$parse(program, command_ext)
+   goto the_end
+
+usage: 
+   copy sys$input sys$output
+   // usage: makecommand [OPTION ...] COMMANDFILE [COMMANDNAME]
+   //
+   // where:
+   //    COMMANDFILE is the file to define as a command.
+   //    COMMANDNAME is the DCL symbol to define as the command.  If not
+   //                specified, it defaults to the same as COMMANDFILE,
+   //                with dashes switched to underscores if present.
+   //    -c          Force the command to execute a DCL command procedure.
+   //    -f          Force the command to be a foreign command (execute
+   //                an executable).
+   //    -h, -?      Display this message and exit.
+   //    -i          Force the command to execute an Icon program (execute
+   //                iconx on an .icx file).
+
+the_end:
+   exit (1 .or. (f$verify(verifying) .and. 0))

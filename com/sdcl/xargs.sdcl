@@ -1,0 +1,15 @@
+I'd be better off doing this in Icon, wouldn't I?
+
+##!> XARGS.SDCL -- Read sys$input and execute a command on each line
+##
+# PIPES "xargs <s.com library/extract=%/output=%.sdi sys$library:starletsd.tlb
+
+    repeat {
+	read/end_of_file=end_of_file
+	for (i = 1; (i .le. 8) .and (p'i' .nes. ""); i++) {
+	    arg = p'i'
+	    len = f$length (arg)
+	    for (j = f$locate ("%", arg)
+	
+    }
+end_of_file:

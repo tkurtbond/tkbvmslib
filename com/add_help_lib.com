@@ -1,0 +1,34 @@
+$!> ADD_HELP_LIB.COM -- Add a help library to list of libraries.
+$
+$ 	lib_name = p1
+$	table_name = p2
+$	if table_name .eqs. "" then table_name = "LNM$PROCESS_TABLE"
+$
+$!	Take care of the simple case, where HLP$LIBRARY isn't defined yet.
+$
+$ 	if f$trnlnm("HLP$LIBRARY", table_name) .eqs. "" 
+$ 	then 
+$	  define/table='table_name hlp$library 'lib_name
+$	  exit 
+$	endif
+$
+$!	Take care of other case, where we need to define HLP$LIBRARY_n,
+$!	where n is one greater than any existing n.
+$
+$	i = 1
+$10:
+$	  log_name = "HLP$LIBRARY_" + f$string(i)
+$	  if f$trnlnm(log_name, table_name) .eqs. "" 
+$	  then
+$	    define/table='table_name 'log_name 'lib_name
+$	    goto 19
+$	  endif
+$         if f$trnlnm (log_name, table_name) .eqs. lib_name
+$         then
+$           ! Found the library, don't need to define it.
+$           goto 19
+$         endif
+$	  i = i + 1
+$	  goto 10
+$19:
+$	exit

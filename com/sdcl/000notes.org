@@ -1,0 +1,10 @@
+* Exit Statuses
+    EXIT_QUIET   = %x10000000
+    EXIT_FAILURE = 2 .or. EXIT_QUIET
+    EXIT_SUCCESS = 1
+* All the *DIRSIZE*.SDCL and [.DIRSIZE]*.SDCL files are incomplete.
+They need updating.  The version in revision control may not work right.
+* Were these ever finished?
+** FLATTEN.SDCL
+** GETSYI.SDCL
+

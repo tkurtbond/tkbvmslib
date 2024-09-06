@@ -1,0 +1,112 @@
+!-*- indented-text -*-
+module tags
+
+variable
+    tags_table_buffer,
+    tags_table_file_name,
+    last_tag;
+
+
+
+procedure get_tags_table(file_name)
+    local old_buffer;
+    
+    tags_table_buffer := create_buffer("*tags*");
+!    set(system, tags_table_buffer);
+    set(no_write, tags_table_buffer);
+    old_buffer := current_buffer;
+    position(tags_table_buffer);
+    tags_table_file_name := read_file(file_name);
+    position(old_buffer);
+    set(modifiable, tags_table_buffer, off);
+
+endprocedure ! get_tags_table
+
+
+
+procedure visit_tags_table
+    local file_name;
+
+    file_name := read_line("Tags Table: ");
+    get_tags_table(file_name);
+endprocedure ! visit_tags_table
+
+
+
+procedure file_of_tag
+    local old_pos, file_name, found_range, p1, p2;
+
+    old_pos := mark(none);
+    found_range := search_quietly(ascii(12), reverse);
+    position(found_range);
+    move_vertical(1);
+    position(line_begin);
+    p1 := mark(none);
+    found_range := search_quietly(",", forward);
+    position(found_range);
+    move_horizontal(-1);
+    file_name := str(create_range(p1, mark(none)));
+    position(old_pos);
+    
+    return file_name;
+endprocedure ! file_of_tag
+
+
+
+procedure find_tag(t; next)
+    local
+        old_buf, found_range, tag_name, full_tag, file_name, line_no,
+        del_Pos, p1, p2;
+
+    old_buf := current_buffer;
+    if next = TPU$K_UNSPECIFIED then ! find first tag
+	message("Next Unspecified");
+	position(beginning_of(tags_table_buffer));
+	tag_name := t;
+	last_tag := t;
+    else
+	position(tags_table_buffer);
+	tag_name := last_tag;
+    endif;
+
+    loop
+	found_range := search_quietly(tag_name, forward);
+	if found_range = 0 then
+	    message("tag not found: " + tag_name);
+	    return 0;
+	endif;
+	position(found_range);
+	exitif search_quietly(anchor + scan(ascii(127)) + ascii(127),
+			      forward) <> 0;
+	position(end_of(found_range));
+    endloop;
+
+    found_range := search_quietly(ascii(127), forward);
+    position(found_range);
+    del_pos := mark(none);
+    file_name := file_of_tag;
+    message("File Name: " + file_name);
+
+    move_horizontal(-1);
+    p1 := mark(none);
+    position(line_begin);
+    full_tag := str(create_range(mark(none), p1));
+    position(del_pos);
+    message("Full tag: " + full_tag);
+
+    move_horizontal(1);
+    p1 := mark(none);
+    position(search_quietly(",", forward));
+    move_horizontal(-1);
+    line_no := int(str(create_range(p1, mark(none))));
+    position(del_pos);
+    message("Line No: " + str(line_no));
+
+    eve_get_file(file_name);
+    position(line_no);
+
+    return 1;
+endprocedure ! find_tag
+
+
+endmodule ! tags

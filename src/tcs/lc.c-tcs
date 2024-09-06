@@ -1,0 +1,305 @@
+%%s 1/0/170
+%%d D 1.4 15-Aug-24 15:39:10 tkb 4 3
+%%c Added a one line comment at the top about what the program does.
+%%s 92/33/78
+%%d D 1.3 14-Jul-24 15:51:02 tkb 3 2
+%%c Add getopt processing.
+%%c If arguments are specified, loop over each, using it as pattern.
+%%c Move search into its own function, list_files.
+%%c Convert output file specifications into lower case.
+%%s 3/3/108
+%%d D 1.2 14-Jul-24 12:53:30 tkb 2 1
+%%c Fix the output labels for the various parts of a file specification.
+%%s 0/0/0
+%%d D 1.1 14-Jul-24 12:50:49 tkb 1 0
+%%c First working version.
+%%T
+%%I 1
+%%I 4
+/* lc.c - List files with VMS wildcards, print only filename & filetype. */
+%%E 4
+/* Using Parse and Search Services */
+#include <stdio.h>
+#include <ssdef.h>
+#include <stsdef.h>
+#include <string.h>
+#include <rms.h>
+%%I 3
+#include <rmsdef.h>
+%%E 3
+#include <starlet.h>
+%%I 3
+#include <vms/ssdef.h>
+%%E 3
+#define MAXFILENAMELEN (NAM$C_MAXRSS+1)
+static int rms_status, rms_status2; /* RMS status variables */
+static char
+  fbuf[MAXFILENAMELEN],         /* filename buffer */
+  xbuf[MAXFILENAMELEN],         /* expanded filename buffer */
+  pfbuf[MAXFILENAMELEN],
+  pxbuf[MAXFILENAMELEN],
+  odev[MAXFILENAMELEN],         /* output device name */
+  odir[MAXFILENAMELEN],         /* output directory name */
+  oname[MAXFILENAMELEN],        /* output file name */
+  otype[MAXFILENAMELEN];        /* output file type */
+
+  
+
+struct FAB filfab, resfab;      /* FAB for $PARSE and $SEARCH */
+struct NAM filnam, resnam;      /* NAM for $PARSE and $SEARCH */
+
+%%D 3
+main(int argc, char **argv)
+%%E 3
+%%I 3
+
+void
+strtolower (char *s, int n)
+%%E 3
+{
+%%D 3
+  char *ibuf = "*.*";
+  auto FILE *fil; /* File pointer for file functions */
+  auto int i; /* Generic loop variable */
+  char obuf[MAXFILENAMELEN];
+%%E 3
+%%I 3
+  int i;
+  for (i = 0; i < n; i++)
+    s[i] = tolower (s[i]);
+}
+%%E 3
+
+%%D 3
+  if (argc > 1) ibuf = argv[1];
+%%E 3
+
+%%D 3
+  filfab = cc$rms_fab; /* Get a FAB */
+  filfab.fab$l_fna = ibuf; /* Parse filename from IBUF */
+%%E 3
+%%I 3
+extern int getopt(int, char **, char *);
+extern char *optarg;
+extern int optind;
+
+extern char **ioinit();
+
+FILE *outfile;
+
+
+void
+list_files (char *pattern)
+{
+  char obuf[MAXFILENAMELEN];
+
+  filfab = cc$rms_fab;          /* Get a FAB */
+  filfab.fab$l_fna = pattern;      /* Parse filename from PATTERN */
+%%E 3
+  filfab.fab$b_fac = FAB$M_GET; /* Only allow $GETs */
+  filfab.fab$l_fop = FAB$M_NAM; /* Use the NAM block for filename */
+%%D 3
+  filfab.fab$l_nam = &filnam; /* -> NAM block */
+%%E 3
+%%I 3
+  filfab.fab$l_nam = &filnam;   /* -> NAM block */
+%%E 3
+
+%%D 3
+  filnam = cc$rms_nam; /* Get a NAM block */
+  filnam.nam$l_esa = xbuf; /* -> Expanded filespec buffer */
+%%E 3
+%%I 3
+  filnam = cc$rms_nam;          /* Get a NAM block */
+  filnam.nam$l_esa = xbuf;      /* -> Expanded filespec buffer */
+%%E 3
+  filnam.nam$b_ess = NAM$C_MAXRSS; /* Expanded filespec buffer length */
+%%D 3
+  filnam.nam$l_rsa = fbuf; /* -> Resultant filespec buffer */
+%%E 3
+%%I 3
+  filnam.nam$l_rsa = fbuf;      /* -> Resultant filespec buffer */
+%%E 3
+  filnam.nam$b_rss = NAM$C_MAXRSS; /* Resultant filespec buffer length */
+
+
+  /* Initialize RMS structures */
+  /* Get filespec to search */
+  /* Validate filespec */
+%%D 3
+  filfab.fab$b_fns = strlen(ibuf);
+%%E 3
+%%I 3
+  filfab.fab$b_fns = strlen(pattern);
+%%E 3
+  if (((rms_status = sys$parse(&filfab)) & STS$M_SUCCESS) == 0)
+    sys$exit (rms_status);
+
+  /* Loop for all files matching filespec */
+  for (;;)
+    {
+      rms_status = sys$search(&filfab);
+      
+%%D 3
+      printf ("rms_status: %x\n", rms_status);
+%%E 3
+      if (! (rms_status & STS$M_SUCCESS)) break;
+
+%%D 3
+      strncpy (obuf, (char *)filnam.nam$l_rsa, filnam.nam$b_rsl);
+      obuf[filnam.nam$b_rsl] = '\0';
+      printf ("filespec: %s\n", obuf);
+
+#if 1
+%%E 3
+      resfab = cc$rms_fab;      /* Get a FAB */
+      resfab.fab$l_fna = filnam.nam$l_rsa; /* Parse file name from result buffer */
+      resfab.fab$b_fns = filnam.nam$b_rsl;
+      resfab.fab$b_fac = FAB$M_GET; /* Only allow $GETs */
+      resfab.fab$l_fop = FAB$M_NAM; /* Use the NAM block for file name */
+      resfab.fab$l_nam = &resnam; /* -> NAM block */
+
+      resnam = cc$rms_nam;      /* Get a NAM block */
+      resnam.nam$l_esa = pxbuf; /* -> Expanded file spec buffer */
+      resnam.nam$b_ess = NAM$C_MAXRSS; /* Expanded file spec buffer length */
+      resnam.nam$l_rsa = pfbuf; /* -> Resultant file spec buffer */
+      resnam.nam$b_rss = NAM$C_MAXRSS; /* Resultant file spec buffer length */
+      resnam.nam$b_nop = NAM$V_SYNCHK;
+
+      rms_status2 = sys$parse(&resfab);
+%%D 3
+      printf ("Huh: %x\n", rms_status2);
+
+%%E 3
+      if ((rms_status2 & STS$M_SUCCESS) == 0)
+        {
+%%D 3
+          return (rms_status2);
+%%E 3
+%%I 3
+          sys$exit (rms_status2);
+%%E 3
+        }
+
+%%D 3
+      strncpy (obuf, (char *)resnam.nam$l_dev, resnam.nam$b_dev);
+      obuf[resnam.nam$b_dev] = '\0';
+      printf ("device: %s\n", obuf);
+
+      strncpy (obuf, (char *)resnam.nam$l_dir, resnam.nam$b_dir);
+      obuf[resnam.nam$b_dir] = '\0';
+%%E 3
+%%D 2
+      printf ("device: %s\n", obuf);
+%%E 2
+%%I 2
+%%D 3
+      printf ("directory: %s\n", obuf);
+%%E 3
+%%E 2
+%%D 3
+
+%%E 3
+      strncpy (obuf, (char *)resnam.nam$l_name, resnam.nam$b_name);
+      obuf[resnam.nam$b_name] = '\0';
+%%D 2
+      printf ("device: %s\n", obuf);
+%%E 2
+%%I 2
+%%D 3
+      printf ("name: %s\n", obuf);
+%%E 3
+%%E 2
+%%I 3
+      strtolower (obuf, resnam.nam$b_name);
+      fprintf (outfile, "%s", obuf);
+%%E 3
+
+      strncpy (obuf, (char *)resnam.nam$l_type, resnam.nam$b_type);
+      obuf[resnam.nam$b_type] = '\0';
+%%D 2
+      printf ("device: %s\n", obuf);
+%%E 2
+%%I 2
+%%D 3
+      printf ("type: %s\n", obuf);
+%%E 3
+%%E 2
+%%I 3
+      strtolower (obuf, resnam.nam$b_type);
+      fprintf (outfile, "%s\n", obuf);
+    }
+}
+%%E 3
+
+%%I 3
+int
+main(int argc, char **argv)
+{
+  char *ibuf = "*.*";
+  auto FILE *fil; /* File pointer for file functions */
+  auto int i; /* Generic loop variable */
+  int opt_errors = 0;
+  int ch;
+  char *outfilename = NULL;
+
+#if 0
+  argv = ioinit(&argc, argv);
+%%E 3
+#endif
+%%D 3
+      printf ("\n");
+%%E 3
+%%I 3
+
+  outfile = stdout;
+
+  optind = 0;			/* init for getopt */
+  while ((ch = getopt(argc, argv, "o:")) != EOF) {
+    switch (ch) {
+    case 'o':
+      outfilename = optarg;
+      break;
+    default:
+      opt_errors++;
+      break;
+%%E 3
+    }
+%%I 3
+  }
+
+  if (opt_errors)
+    {
+      fprintf (stderr, "usage: %s [-o outfile]\n", argv[0]);
+      exit (SS$_BADPARAM);
+    }
+
+  if (outfilename)
+    {
+      outfile = fopen (outfilename, "w");
+      if (! outfile)
+        {
+          fprintf (stderr, "%s: unable to open \"%s\"\n", argv[0], outfilename);
+          exit (RMS$_FNF);
+        }
+    }
+
+  if ((argc - optind) == 0)
+      list_files (ibuf);
+  else
+    {
+      for (i = optind; i < argc; i++)
+        {
+          ibuf = argv[i];
+          list_files (ibuf);
+        }
+    }
+
+  if (outfilename) fclose (outfile);
+
+%%E 3
+  if ((rms_status == RMS$_FNF) || (rms_status == RMS$_NMF))
+    rms_status = SS$_NORMAL; /* Handle expected errors */
+  return(rms_status);
+}
+%%E 1

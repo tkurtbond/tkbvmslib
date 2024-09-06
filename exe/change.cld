@@ -1,0 +1,17 @@
+!------------------------------------------------------------------------------
+!> CHANGE.CLD -- Command Language Definition for CHANGE.BAS
+!------------------------------------------------------------------------------
+define verb change
+    image exe_lib:change
+    parameter p1,
+        label = input,
+	prompt = "Input File: ",
+	value(type = $file)
+    parameter p2,
+        label = output,
+	prompt = "Output File: ",
+	value(type = $file)
+    qualifier upper
+    qualifier lower
+    disallow upper and lower
+    

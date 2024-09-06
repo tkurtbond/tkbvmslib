@@ -1,0 +1,83 @@
+###############################################################################
+#	
+# Program:	Q U E B A T C H . S D C L
+# Written by:	Thomas Kurt Bond
+#     
+# Purpose:	Quick quebatcher, gets rid of all the questions QUEBATCH
+#		normally asks.
+#
+# Parameters: filler, filename and/or options, options and/or filename
+#             p1 = Is a filler, which allows putting qualifiers immediately
+#                  after the command which summons this command procedure.
+#             p2 = Is either the filename or options.  If a qualifier
+#                  was specified immediately after the command, it is
+#                  p2; otherwise, p2 is the filename.
+#             p3 = Is filename if a qualifier was specified immediately
+#                  after the command.
+# History:
+# Modified	By	Why
+# 061489        tkb     Change to new version of SDCL, add verify handling
+###############################################################################
+
+##turn off verify unless specifically requested
+verifying = 'f$verify(f$type(quebatch_verify) .nes. "")'
+
+##Set up usefull abrieviations
+inq := inquire/nopun
+wso := write sys$output
+
+##Set up global constants 
+true = (1 .eq. 1)
+false = .not. true
+debug = false
+perform_quebatch := $dms:quebatch	#The command we are going to do
+
+if (debug) wso f$fao("p1: !AS!/p2: !AS!/p3: !AS!/p4: !AS", p1, p2, p3, p4)
+
+##If a qualifier (which starts with "/") was specified immediately after
+##the command (i.e. "$ qbat/nosubmit batch_control_file"), 
+##p2 is that qualifier, otherwise, p2 is the filename
+
+if (f$extract(0, 1, p2) .eqs. "/") {
+   file = p3 + p2
+} else {
+   file = p2 + p3
+}                           
+
+if (file .eqs. "") inq file "_File to QueBatch: "
+if (file .eqs. "") 			#No file, so don't do anything
+   exit (1 .or. (f$verify(verifying) .and. 0))
+
+##Get all the qualifiers seperated from the filename
+location = f$locate("/", file)
+if (location .eq. f$length(file))	#No options found
+   options = ""
+else {
+   options = f$extract(location, f$length(file), file)
+   file = f$extract(0, location, file)
+}
+                                             
+##If the file extension was omitted, put a bcf on the end.
+file_type = f$parse(file, , , "type")
+if (file_type .eqs. ".") file = file + ".bcf"
+
+if (debug) wso f$fao("File:    !AS!/Options: !AS", file, options)
+
+##If nosubmit was specified, include that qualifier, else include submit
+if (f$locate("/NOS", options) .ne. f$length(options))
+   submit_option = "/nosubmit"
+else
+   submit_option = "/submit"
+
+##Build the command line
+command = file + "/delete/output/noprinter/replace/queue" \
+        + submit_option                             
+if (debug) {
+   wso f$fao("Command: !AS !AS", perform_quebatch, command)
+} else {				#Perform the command
+   define/user sys$input sys$command	#So it can get user input
+   perform_quebatch 'command'
+}
+
+The_End:
+exit (1 .or. (f$verify(verifying) .and. 0))

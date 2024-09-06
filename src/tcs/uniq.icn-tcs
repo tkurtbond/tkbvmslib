@@ -1,0 +1,16 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 16:12:21 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+procedure main ()
+  local line, last
+  last := ""
+  while line := read () do {
+    if line ~== last then {
+      last := line
+      write (line)
+    }
+  }
+end # main
+%%E 1

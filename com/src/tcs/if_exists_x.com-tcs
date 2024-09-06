@@ -1,0 +1,18 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:26 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+$!> IF_EXISTS.COM -- Execute the command file in p1 if it exists
+$ filename = f$parse(p1, ".com")
+$ if f$search(filename) .nes. "" 
+$ then
+$     if f$file (
+$     then
+$         @'filename' 'p2' 'p3'   
+$     endif
+$ else
+$     write sys$error "error: cannot find ''p1'"
+$     exit 1			! so won't insult/kill caller
+$ endif
+%%E 1

@@ -1,0 +1,124 @@
+                              How to create a diff
+
+    To create a diff to be sent to Geoff Huston, you use the DIFF program
+with the "-C" option to create a "context diff" which will have a good chance
+of working even if someone has made a local change to their source.
+
+    Let's walk through an example.  Say I added a nifty change to NEWSPOST.C.
+I want to send it to Geoff to be included in the next patchlevel of NEWS.
+
+    So here's a directory:
+
+          Directory PERM$2:[CONSLT32.WORK]
+
+          NEWSPOST.C;2        NEWSPOST.C;1
+
+          Total of 2 files.
+
+    To create the diff, I just use the form "DIFF -C oldfile newfile".  One
+important thing, though, is to make the newer filename shorter than the older
+one.  I just do this by specifying the version number on the old version, but
+not on the new one.
+
+    First, set up a foreign symbol for DIFF if you haven't:
+
+            $ DIFF :== $disk:[directory]DIFF
+
+    To create the diff:
+
+            $ DEFINE/USER SYS$OUTPUT DIFF.TXT   ! Filename of the diff
+            $ DIFF -C NEWSPOST.C;1 NEWSPOST.C
+
+Here's what the sample output looks like, in this case:
+
+---------------------------------------------------------------
+
+     *** newspost.c;-1                           <-- Old filename
+     --- newspost.c                              <-- New one, should be shorter
+     **************                              <-- Start of first patch
+     *** 137,142                                 <-- Section from old file
+                *msg;
+       {
+           char mail_cmd[IO_SIZE];
+  
+           err_line(msg);  
+           if (screen_active) {
+     --- 137,143 -----                           <-- Section from new file
+                *msg;
+       {
+           char mail_cmd[IO_SIZE];
+     +     int added_var;                        <-- '+' means added line
+  
+           err_line(msg);  
+           if (screen_active) {
+     **************                              <-- Start of second patch
+     *** 151,156
+               smg$begin_pasteboard_update(&pid);
+               broad_trap();
+               }
+           clear_err_line();
+       }
+       #endif
+     --- 152,158 -----
+               smg$begin_pasteboard_update(&pid);
+               broad_trap();
+               }
+     +     doit(added_var);                     <-- Added call to doit()
+           clear_err_line();
+       }
+       #endif
+
+---------------------------------------------------------------
+
+That's about it.  If you have more than one file changed, you can create
+diffs for each and append them together - patch will do multiple files
+at once.
+
+    Check your patch to make sure it looks right, and it's set to go!
+
+                                Applying a patch
+
+   To apply a patch, you must first extract it to a file.  You shouldn't
+have to worry about editing the header from the top, because patch will
+ignore it.
+
+   Set up a foreign symbol for patch, i.e.
+
+          $ PATCH :== $disk:[directory]PATCH
+
+then, set your default directory to wherever the affected files are,
+and invoke PATCH:
+
+          $ PATCH <DIFF.TXT               ! DIFF.TXT is the diff
+
+notice, please, that there's no space between the '<' and the filename.
+
+    Patch will print progress messages and (hopefully) patch your files.
+Occasionally, enough of a change will have been made locally that a patch
+will fail.  If this happens, PATCH creates a filename with the name of the
+file and "_REJ" appended to it.  You'll have to use an editor to apply
+rejected patches by hand.  Hopefully, patches won't be rejected often.
+
+    Here's a sample PATCH log from the patch above:
+
+         $ patch <diff.txt
+         Hmm...  Looks like a context diff to me...
+         The text leading up to this was:
+         --------------------------
+         |*** newspost.c;-1
+         |--- newspost.c
+         --------------------------
+         Patching file newspost.c using Plan B...
+         Hunk #1 succeeded at 137.
+         Hunk #2 succeeded at 152.
+         done
+
+    So, it's fairly simple!  This guide, though, is just an introductory
+text.  Have a look at both PATCH.DOC and DIFF.DOC, realizing that some
+of the things they talk about are Unix-only, for more information.
+
+---------------------------------+--------------------------------------------
+ Tim Russell, Computer Operator  | Internet: russell@zeus.unl.edu
+ Campus Computing                | Bitnet:   russell@unoma1
+ University of Nebraska at Omaha | UUCP:     uunet!zeus.unl.edu!russell
+---------------------------------+--------------------------------------------

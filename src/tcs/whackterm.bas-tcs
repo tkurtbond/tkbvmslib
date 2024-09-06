@@ -1,0 +1,25 @@
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 16:12:21 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+!++++
+! whackterm.bas -- Fill screen with asterisks when term emulator is confused.
+!----
+program whackterm
+    option type = explicit, constant type = integer, &
+        size = integer long, size = real double
+
+    declare integer constant NUM_LINES = 50
+    declare integer constant NUM_COLUMNS = 80
+    
+    declare integer i
+    declare string s
+
+    s = string$ (NUM_COLUMNS, A"*")
+
+    for i = 1 to 50
+        print s
+    next i
+end program ! whackterm
+%%E 1

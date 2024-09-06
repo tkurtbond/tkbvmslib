@@ -1,0 +1,227 @@
+!-*- indented-text -*- Yes, I use emacs to edit this...
+!+++
+! tags.tpu -- Find functions and type defs in source files using tag table
+!
+! This was inspired by the Emacs tags facility, and uses the same (or a 
+! reasonable facsimile thereof) format for the tag table file.
+!
+! To use this, you first need to make a tags file using etags or betags.  
+! Next, hit the DO key and type `find tag' and press the RETURN key.
+! It will ask you for a tag.  Enter the name of the function or type definition
+! you want to find and press return.  (If this is the first time during this 
+! editing session that you've issued the find tag command, it will then ask for
+! tag table.  Enter the name of the tag table file and press return.)  If 
+! a tag exists that contains the name you entered, it will select the buffer 
+! that the tag points to and put the cursor at its definition.  
+!
+! Commands:				Suggested Bindings:
+!
+! * eve_visit_tags_table(;the_file)
+! * eve_find_tag(t)			Gold/.   (*not* Gold/kp.)
+! * eve_find_next_tag			Gold/,	 (*not* Gold/kp,)
+!
+!---
+
+
+
+procedure tags_module_indent
+   return "V00-001";
+endprocedure
+
+
+
+variable
+    tags_table_buffer,
+    tags_table_file_name,
+    last_tag;
+
+
+! internal procedure to read in the tag table
+procedure get_tags_table(file_name)
+    local old_buffer;
+    
+    if tags_table_buffer = TPU$K_UNSPECIFIED then
+        tags_table_buffer := create_buffer("*tags*");
+    else
+	set(modifiable, tags_table_buffer, on);
+        erase(tags_table_buffer);
+    endif;
+!    set(system, tags_table_buffer);
+    set(no_write, tags_table_buffer);
+    old_buffer := current_buffer;
+    position(tags_table_buffer);
+    tags_table_file_name := read_file(file_name);
+    !get rid of version number so it won't cause problems when we use it for
+    !defaulting.
+    tags_table_file_name := file_parse(tags_table_file_name, "", "",
+				       NODE, DEVICE, DIRECTORY, NAME, TYPE);
+    position(old_buffer);
+    set(modifiable, tags_table_buffer, off);
+
+endprocedure ! get_tags_table
+
+
+
+! User visible command to specify which tag table to look things up in.
+! If the file name is unspecified or a null string, it prompts for a file name.
+procedure eve_visit_tags_table(;the_file)
+    local file_name;
+
+    if (the_file = TPU$K_UNSPECIFIED) or (the_file = "") then
+        file_name := read_line("Tag Table: ");
+    else
+        file_name := the_file;
+    endif;
+    get_tags_table(file_name);
+endprocedure ! visit_tags_table
+
+
+
+! return the name of the file to which the current tag line points
+procedure file_of_tag
+    local old_pos, file_name, found_range, p1, p2;
+
+    old_pos := mark(none);
+    found_range := search_quietly(ascii(12), reverse);
+    position(found_range);
+    move_vertical(1);
+    position(line_begin);
+    p1 := mark(none);
+    found_range := search_quietly(",", forward);
+    position(found_range);
+    move_horizontal(-1);
+    file_name := str(create_range(p1, mark(none)));
+    position(old_pos);
+    
+    return file_name;
+endprocedure ! file_of_tag
+
+
+
+! Internal procedure to find the tag in the current tag table whose
+! name contains the tagname |t|.  If |next| is not unspecified, find
+! the next tag in the tag table that matches the tagname used in the
+! previous find_tag.
+procedure find_tag(t; next)
+    local
+        old_buf, found_range, tag_name, full_tag, file_name, line_no,
+        del_Pos, p1, p2;
+
+    old_buf := current_buffer;
+    if tags_table_buffer = TPU$K_UNSPECIFIED then
+        eve_visit_tags_table("");
+    endif;
+
+    if next = TPU$K_UNSPECIFIED then ! find first tag
+	!message("Next Unspecified");
+	position(beginning_of(tags_table_buffer));
+	tag_name := t;
+	last_tag := t;
+    else
+	if last_tag = TPU$K_UNSPECIFIED then 
+	    message("No tag of which to find next occurence");
+	    return 0;
+        endif;
+	position(tags_table_buffer);
+	tag_name := last_tag;
+    endif;
+
+    loop
+	found_range := search_quietly(tag_name, forward);
+	if found_range = 0 then
+	    if next = TPU$K_UNSPECIFIED then
+	        message("No entries containing " + tag_name);
+	    else
+		message("No more entries containing " + tag_name);
+	    endif;
+	    position(old_buf);
+	    return 0;
+	endif;
+	position(found_range);
+	exitif search_quietly(anchor + scan(ascii(127)) + ascii(127),
+			      forward) <> 0;
+	position(end_of(found_range));
+    endloop;
+
+    !Find the DEL, everything works from there
+    found_range := search_quietly(ascii(127), forward);
+    position(found_range);
+    del_pos := mark(none);
+
+    !Get the name of the file the tag is in, and expand it using the 
+    !tag table file name for a template, so files are relative to the 
+    !directory of the tag table file.
+    file_name := file_of_tag;
+    file_name := file_parse(file_name, tags_table_file_name);
+    !message("File Name: " + file_name);
+
+    !Get the full text of the tag
+    move_horizontal(-1);
+    p1 := mark(none);
+    position(line_begin);
+    full_tag := str(create_range(mark(none), p1));
+    position(del_pos);
+    !message("Full tag: " + full_tag);
+
+    !Get the line number the item tagged was originally on.
+    move_horizontal(1);
+    p1 := mark(none);
+    position(search_quietly(",", forward));
+    move_horizontal(-1);
+    line_no := int(str(create_range(p1, mark(none))));
+    position(del_pos);
+    !message("Line No: " + str(line_no));
+
+    !Get the file and position on the original line.
+    eve_get_file(file_name);	        !??? is this avail in LSE
+    position(line_no);
+    position(line_begin);
+    p1 := mark(none);
+
+    if search_quietly(anchor + full_tag, forward) <> 0 then
+        return 1			! we found it
+    endif;
+
+    !It isn't on the same line anymore.
+    !message("It isn't on the same line anymore!");
+    found_range := search_quietly(line_begin + full_tag, forward);
+    if found_range <> 0 then
+        position(found_range);
+        return 1;
+    endif;
+    found_range := search_quietly(line_begin + full_tag, reverse);
+    if found_range <> 0 then
+        position(found_range);
+        return 1;
+    endif;
+
+    !can't find it
+    message("Tag " + tag_name + " isn't in file " + file_name);
+
+    return 0;
+endprocedure ! find_tag
+
+
+
+! User command to find the tag in the current tag table whose name contains
+! tagname |t|.  Selects the buffer that the tag is contained in and puts 
+! the cursor at its definition.  
+procedure eve_find_tag(t)
+    local tag_name;
+
+    if (t = TPU$K_UNSPECIFIED) or (t = "") then
+	tag_name := read_line("Find Tag: ");
+    else
+	tag_name := t;
+    endif;
+
+    find_tag(tag_name);
+endprocedure ! eve_find_tag
+
+
+
+! User command to find the next tag in the tag table that matches the tagname
+! used in the previous find tag command.
+procedure eve_find_next_tag
+    find_tag("",1);
+endprocedure ! eve_find_next_tag

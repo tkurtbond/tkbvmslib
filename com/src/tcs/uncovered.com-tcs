@@ -1,0 +1,8 @@
+%%s 0/0/0
+%%d D 1.1 06-Sep-24 13:26:47 tkb 1 0
+%%c Add a command procedure to list all the uncovered files in this directory,
+%%c ignoring the appropriate file types.
+%%T
+%%I 1
+$ tcs uncovered -ignored=genmms
+%%E 1

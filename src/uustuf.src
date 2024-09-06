@@ -1,0 +1,312 @@
+From:	MX%"OS360051@WVNVAXA.WVNET.EDU" 20-NOV-1991 14:05:03.90
+To:	TKB
+CC:	
+Subj:	Re: UUDECODE and UUENCODE for VMS
+
+Return-Path: <@MTNET2.WVNET.EDU:OS360051@WVNVAXA.WVNET.EDU>
+Received: from WVNVAXA.WVNET.EDU by MTNET2.WVNET.EDU (MX V2.3) with SMTP; Wed,
+          20 Nov 1991 14:04:49 EST
+Received: from WVNVMS.WVNET.EDU by WVNVMS.WVNET.EDU (PMDF #12029) id
+          <01GD6AMFYMZK91W0NN@WVNVMS.WVNET.EDU>; Wed, 20 Nov 1991 14:04 EST
+Date: Wed, 20 Nov 1991 14:04 EST
+From: "T. Kurt Bond" <OS360051@WVNVAXA.WVNET.EDU>
+Subject: Re: UUDECODE and UUENCODE for VMS
+To: tkb@mtnet2.wvnet.edu
+Message-ID: <01GD6AMFYMZK91W0NN@WVNVMS.WVNET.EDU>
+X-VMS-To: in%"tkb@mtnet2.wvnet.edu"
+
+X-News: wvnvms comp.os.vms:18696
+From: mdchaney@bronze.ucs.indiana.edu (M Darrin Chaney)
+Subject:Re: UUDECODE and UUENCODE for VMS
+Date: 15 Nov 91 14:42:02 GMT
+Message-ID:<1991Nov15.144202.1404@bronze.ucs.indiana.edu>
+
+In article <1991Nov14.203651.18525@nrcnet0.nrc.ca> johnston@mtcsg0.ime.nrc.ca (Daniel F. Johnston) writes:
+>I am looking for the source for a VMS version of UUDECODE and
+>UUENCODE.  I tried the monthly software list that is posted in
+>this group, and then I tried ARCHIE but could not find a site
+>that held VMS sources.  So I turn to the group as a whole.
+
+Just because you couldn't find a "VMS site", you shouldn't give up so
+easily.  The first rule is to get it, and see if it works.
+
+I have both uuencode and uudecode, and I got them from
+gatekeeper.dec.com (pub/bsd-sources/src/usr.bin/uucp).  They don't work
+as is, but with a little work, they did. All you have to
+do to them is take out the stuff that handles a filename of the type
+~/file or ~user/file, and force it to take two parameters, an input
+filename and an output filename.
+
+They are short, so I included them below.
+
+	Darrin
+
+--
+mdchaney@iubacs
+mdchaney@bronze.ucs.indiana.edu
+mdchaney@rose.ucs.indiana.edu
+------uudecode.c----------------------------------------------------------
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)uudecode.c	5.5 (Berkeley) 7/6/88";
+#endif /* not lint */
+
+/*
+ * uudecode [input]
+ *
+ * create the specified file, decoding as you go.
+ * used with uuencode.
+ */
+#include <stdio.h>
+#include <types.h>
+#include <stat.h>
+
+/* single character decode */
+#define DEC(c)	(((c) - ' ') & 077)
+
+main(argc, argv)
+char **argv;
+{
+	FILE *in, *out;
+	int mode;
+	char dest[128];
+	char buf[80];
+
+	/* optional input arg */
+	if (argc > 1) {
+		if ((in = fopen(argv[1], "r")) == NULL) {
+			perror(argv[1]);
+			exit(1);
+		}
+		argv++; argc--;
+	} else
+		in = stdin;
+
+	if (argc != 1) {
+		printf("Usage: uudecode [infile]\n");
+		exit(2);
+	}
+
+	/* search for header line */
+	for (;;) {
+		if (fgets(buf, sizeof buf, in) == NULL) {
+			fprintf(stderr, "No begin line\n");
+			exit(3);
+		}
+		if (strncmp(buf, "begin ", 6) == 0)
+			break;
+	}
+	(void)sscanf(buf, "begin %o %s", &mode, dest);
+
+	/* create output file */
+	out = fopen(dest, "w");
+	if (out == NULL) {
+		perror(dest);
+		exit(4);
+	}
+	chmod(dest, mode);
+
+	decode(in, out);
+
+	if (fgets(buf, sizeof buf, in) == NULL || strcmp(buf, "end\n")) {
+		fprintf(stderr, "No end line\n");
+		exit(5);
+	}
+	exit(0);
+}
+
+/*
+ * copy from in to out, decoding as you go along.
+ */
+decode(in, out)
+FILE *in;
+FILE *out;
+{
+	char buf[80];
+	char *bp;
+	int n;
+
+	for (;;) {
+		/* for each input line */
+		if (fgets(buf, sizeof buf, in) == NULL) {
+			printf("Short file\n");
+			exit(10);
+		}
+		n = DEC(buf[0]);
+		if (n <= 0)
+			break;
+
+		bp = &buf[1];
+		while (n > 0) {
+			outdec(bp, out, n);
+			bp += 4;
+			n -= 3;
+		}
+	}
+}
+
+/*
+ * output a group of 3 bytes (4 input characters).
+ * the input chars are pointed to by p, they are to
+ * be output to file f.  n is used to tell us not to
+ * output all of them at the end of the file.
+ */
+outdec(p, f, n)
+char *p;
+FILE *f;
+{
+	int c1, c2, c3;
+
+	c1 = DEC(*p) << 2 | DEC(p[1]) >> 4;
+	c2 = DEC(p[1]) << 4 | DEC(p[2]) >> 2;
+	c3 = DEC(p[2]) << 6 | DEC(p[3]);
+	if (n >= 1)
+		putc(c1, f);
+	if (n >= 2)
+		putc(c2, f);
+	if (n >= 3)
+		putc(c3, f);
+}
+-------------------uuencode.c-----------------------------------------------
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)uuencode.c	5.6 (Berkeley) 7/6/88";
+#endif /* not lint */
+
+/*
+ * uuencode input output
+ *
+ * Encode a file so it can be mailed to a remote system.
+ */
+#include <stdio.h>
+#include <types.h>
+#include <stat.h>
+
+/* ENC is the basic 1 character encoding function to make a char printing */
+#define ENC(c) ((c) ? ((c) & 077) + ' ': '`')
+
+main(argc, argv)
+char **argv;
+{
+	FILE *in,*out;
+	struct stat sbuf;
+	int i,mode;
+   char out_filename[200];
+
+
+   /* parse args */
+   if (argc < 2) {
+      fprintf(stderr,"usage: uuencode inputfile outputfile\n");
+      exit(0);
+   } else {
+      if ((in = fopen(argv[1], "r")) == NULL) {
+         perror("uuencode");
+         exit(1);
+      }
+
+      if (argc > 2) {
+         strcpy(out_filename,argv[2]);
+      } else {
+         sprintf(out_filename,"%s_uu",argv[1]);
+      }
+
+      if ((out = fopen(out_filename, "w")) == NULL) {
+         perror("uuencode");
+         exit(1);
+      }
+   }
+
+	/* figure out the input file mode */
+	if (fstat(fileno(in), &sbuf) < 0 || !isatty(fileno(in)))
+		mode = 0666 & ~umask(0666);
+	else
+		mode = sbuf.st_mode & 0777;
+	fprintf(out,"begin %o %s\n", mode, argv[1]);
+
+	encode(in, out);
+
+	fprintf(out,"end\n");
+	exit(0);
+}
+
+/*
+ * copy from in to out, encoding as you go along.
+ */
+encode(in, out)
+register FILE *in;
+register FILE *out;
+{
+	char buf[80];
+	register int i, n;
+
+	for (;;) {
+		/* 1 (up to) 45 character line */
+		n = fread(buf, 1, 45, in);
+		putc(ENC(n), out);
+
+		for (i=0; i<n; i += 3)
+			outdec(&buf[i], out);
+
+		putc('\n', out);
+		if (n <= 0)
+			break;
+	}
+}
+
+/*
+ * output one group of 3 bytes, pointed at by p, on file f.
+ */
+outdec(p, f)
+register char *p;
+register FILE *f;
+{
+	register int c1, c2, c3, c4;
+
+	c1 = *p >> 2;
+	c2 = (*p << 4) & 060 | (p[1] >> 4) & 017;
+	c3 = (p[1] << 2) & 074 | (p[2] >> 6) & 03;
+	c4 = p[2] & 077;
+	putc(ENC(c1), f);
+	putc(ENC(c2), f);
+	putc(ENC(c3), f);
+	putc(ENC(c4), f);
+}
+---------------------------------------------------------------------------
+--
+--
+
+mdchaney@iubacs
+mdchaney@bronze.ucs.indiana.edu
+mdchaney@rose.ucs.indiana.edu

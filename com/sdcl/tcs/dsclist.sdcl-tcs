@@ -1,0 +1,137 @@
+%%s 0/0/0
+%%d D 1.1 13-Aug-24 12:00:31 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+###############################################################################
+## 
+##      Program:        D S C L I S T . S D C L
+##      Written By:     T. Kurt Bond
+##      Version:        2.0
+##      Date Created:   Long ago.
+##
+## Description: This command procedure allows the user to produce listings of 
+## POISE DMS .DSC files in multiple formats, without having to answer the
+## interactive prompts DMS:DESCRIBE requires.
+##############################################################################
+##      History:
+##   Ver   When        Who  What
+##   1.0   ????-??-??  TKB  Original Version
+##   2.0   2022-02-10  TKB  Convert to SDCL, add -DEBUG and -O.
+###############################################################################
+    !> DSCLIST.COM -- List a .DSC file or files.
+    verifying = 'f$verify(f$type(dsclist_verify) .nes. "")'
+
+    wso :== write sys$output
+    wse :== write sys$error
+    
+    false = (1 .eq. 0)
+    true = (1 .eq. 1)
+
+    ## Default to brief format
+    format = "BRIEF"
+    outfile_specified = false
+    outfile = ""
+    verbose = false
+    debugging = false
+
+    for (i = 1; f$extract (0, 1, p'i') .eqs. "-"; i = i + 1) {
+        opt = p'i'
+        if (opt .eqs. "-DOUBLE")
+            format = "DOUBLE"
+        else if (opt .eqs. "-FULL")
+            format = "FULL"
+        else if (opt .eqs. "-BRIEF")  # Just for symmetry.
+            format = "BRIEF"
+        else if ((opt .eqs. "-VERBOSE") .or. (opt .eqs. "-V"))
+            verbose = true
+        else if (opt .eqs. "-DEBUG")
+            debugging = true
+        else if (opt .eqs. "-O") {
+            outfile_specified = true
+            i = i + 1
+            outfile = p'i'
+        } else {
+            wse "dsclist: Unknown option: ", opt
+            goto usage
+        }
+    }
+    fmt_type = f$extract (0,1,format)
+    filespec = p'i'
+    filespec = f$parse (filespec, ".DSC",,, "SYNTAX_ONLY")
+    if (verbose) wso "dsclist: original filespec: ", filespec
+    pid = f$getjpi ("", "PID")
+
+    ## If the user doesn't include a wildcard in the filespec,
+    ## f$search will always return the filename as many times as called
+    ## and never the empty string, so check for that.
+    old_filename = ""
+    i = 0
+$:
+    repeat {
+        filename = f$search (filespec)
+        if ((i .eq. 0) .and. (filename .eqs. "")) {
+            wse "dsclist: Filespec ", filespec, " not matched, exiting."
+            break
+        }
+        ## If you give f$search() a filespec without any wildcards it ALWAYS
+        ## returns the filename.
+        if ((old_filename .eqs. filename) .or. -
+            ((i .gt. 0) .and. (filename .eqs. ""))) {
+            if (verbose) wso "dsclist: ", i, " files processed, exiting." 
+            break
+        }
+        i = i + 1
+        if (verbose) wso "dsclist: file ", i, ", name: ", filename
+        if (filename .eqs. "") break
+        old_filename = filename
+
+        ## So, tricky detail.  For hysterical raisons the default was
+        ## to output the listing file in current directory, no matter
+        ## where the file being listed originated.  And it searches
+        ## for multiple matching filenames if a wildcard was
+        ## specified.  So the output filename defaulted to the
+        ## filename of the current file being listed, in the current
+        ## directory.  Now, when -O was added, there was no way to
+        ## specify multiple output files, and now way to write them
+        ## all to the same file.  So, now the listings of all match
+        ## files will be written to the output file -O specified,
+        ## creating multiple versions of the file.  Warn about that.
+        if (.not. outfile_specified) {
+            name = f$parse (filename,,, "NAME")           
+            outfile = name + "." + fmt_type + "DSC"
+        } else if (outfile_specified .and. (i .gt. 1))
+            wse "dsclist: -O specified, but multiple files matched, which was probably not intended!"
+            
+
+        genprocname = "DSCLST" + f$string (pid) + "_" + f$string (i) + ".tmp"
+        #genprocname = f$parse (genprocname, "SYS$SCRATCH")
+
+        ## Oddly enough, apparently specifying the extension in the argument
+        ## to describe below only works with the /LIST option; if not using
+        ## the /LIST option, DESCRIBE dies complaining about not supporting 
+        ## SQL tables.  And if you specify .DTA instead of .DSC, that works!
+        dclsub/input=sys$input/output='genprocname'
+        //$ DECK
+        //$! start of ~genprocname~ for ~filename~
+        //$ delete 'f$environment ("PROCEDURE")'      ! get rid this of temporary file
+        //$ define/user sys$output nla0:
+        //$ describe ~filename~/list
+        //
+        //~format~
+        //~outfile~
+        //-1
+        //
+        //~name~ ~format~ DSC LIST
+        //
+        //$! end of ~genprocname~ for ~filename~
+        //$ EOD
+        if (debugging) wse "dsclist: Debugging, so not executing ", genprocname
+        else @'genprocname'
+    }
+    exit (1 .or. (f$verify(verifying) .and. 0))
+usage:
+    wse "usage: dsclist [-full | -double] <filespec>"
+    wse "where <filespec> resolves to a POISE .DSC file; wildcards allowed."
+    exit (1 .or. (f$verify(verifying) .and. 0))
+%%E 1
