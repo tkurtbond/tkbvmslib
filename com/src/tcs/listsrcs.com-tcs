@@ -1,0 +1,47 @@
+%%s 10/6/1
+%%d D 1.3 06-Sep-24 15:52:37 tkb 3 2
+%%c Renamed to LISTSRCS.COM, commented purpose, generalaized names, and switcheed
+%%c to using sedit.
+%%s 1/1/6
+%%d D 1.2 06-Sep-24 13:21:10 tkb 2 1
+%%c Rename [MPL.TKB.LIB] to [MPL.TKB.TKBVMSLIB].
+%%s 0/0/0
+%%d D 1.1 15-Aug-24 15:20:27 tkb 1 0
+%%c Initial checkin.
+%%T
+%%I 1
+%%D 3
+$!> LISTSRC.COM - List Webmail Communicator source files.
+%%E 3
+%%D 2
+$       l :== $mpl$data:[mpl.tkb.lib.exe]l.exe
+%%E 2
+%%I 2
+%%D 3
+$       l :== $mpl$data:[mpl.tkb.tkbvmslib.exe]l.exe ! I don't think this is there...
+%%E 3
+%%E 2
+%%D 3
+$       l -o st_tmp:mwmc_src.lis *.txt *.text *.bas *.inc *.com *.dis *.fdl *.mms *.msg 
+%%E 3
+%%I 3
+$!> LISTSRCS.COM - List source files.
+$!-----------------------------------------------------------------------------
+$! This is here as example of using lc, stsort, uniq, and sed to make a shell
+$! script that puts all the listed files into an archive.
+$!----------------------------------------------------------------------------
+$       lc :== $mpl$data:[mpl.tkb.tkbvmslib.exe]lc.exe ! uses the C version of the lister.
+$       lc -o st_tmp:src.lis *.txt *.text *.bas *.inc *.com *.dis *.fdl *.mms *.msg 
+%%E 3
+$! -u doesn't work
+%%D 3
+$       stsort <~tmp/mwmc_src.lis >~tmp/mwmc_src_sorted.lis
+$       uniq <~tmp/mwmc_src_sorted.lis >~tmp/mwmc_src_uniq.lis
+$       sed -e "s/^/ar uv mwmc.w /" <st_tmp:mwmc_src_uniq.lis >st_tmp:mwmc_to_w.sh
+%%E 3
+%%I 3
+$       stsort <~tmp/src.lis >~tmp/src_sorted.lis
+$       uniq <~tmp/src_sorted.lis >~tmp/src_uniq.lis
+$       sedit "s/%/ar uv mwmc.w /" <st_tmp:src_uniq.lis >st_tmp:src_to_w.sh
+%%E 3
+%%E 1
