@@ -37,7 +37,7 @@ the SWTOOLS VOS uses to store its source files, with all the source
 files in an archive file, which is then checked into a TCS file:
 
 * `ardiff.sdcl
-  <https://github.com/tkurtbond/tkbvmslib/blob/main/com/sdcl/ardiff.sdcl>`.
+  <https://github.com/tkurtbond/tkbvmslib/blob/main/com/sdcl/ardiff.sdcl>`_.
   Compare archive file to the version in a SWTOOLS VOS archive.
 * `aroutdated <https://github.com/tkurtbond/tkbvmslib/blob/main/com/sdcl/aroutdated.sdcl>`_.  Find if sources of SWTOOLS archive entries are newer.
 * `aruncovered.sdcl <https://github.com/tkurtbond/tkbvmslib/blob/main/com/sdcl/aruncovered.sdcl>`_.  Check for files in current directory not in a archive.
