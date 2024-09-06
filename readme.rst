@@ -48,17 +48,26 @@ Second, for working with files in version control where a file named
 ``[.TCS]FILE.TYPE-TCS``:
 
 * `tcs.sdcl <https://github.com/tkurtbond/tkbvmslib/blob/main/com/sdcl/tcs.sdcl>`_.  This provides the subcommands:
-  - ``help``
+
+  - ``help``.  Display a usage message.
+
   - ``admin``.  Add a new file to TCS version control.
+
   - ``delta``.  Add a new version of a file to TCS version control.
+
   - ``diff``.  Compare a file to a version in TCS version control.
+
   - ``get``.  Get a version of a file from TCS version control.
+
   - ``init``.  Put all the files in the current directory under TCS
     version control.
+
   - ``mv``.  Move (rename) a file and its corresponding TCS version
     control file. to a new name.
+
   - ``outdated``.  List all the source files that are newer than their
     corresponding TCS version control files.
+
   - ``uncovered``.  List all the files in the current directory that
     do not have corresponding TCS version control files.
 
