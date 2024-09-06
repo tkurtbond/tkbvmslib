@@ -1,3 +1,8 @@
+%%s 0/0/0
+%%d D 1.1 06-Sep-24 14:00:09 tkb 1 0
+%%c Add a readme.rst file describing what is in this directory hierarchy.
+%%T
+%%I 1
 TKB's VMS Library
 @@@@@@@@@@@@@@@@@
 
@@ -81,3 +86,4 @@ There are several ``descrip.mms`` and related ``.mms`` files in this
 repository.  These are the control files for the VMS Module Management
 System (MMMS), the VMS equivalent of ``make``.  I actually use MMK,
 the MadGoat Make Utility, which is compatible with MMS, but is free.
+%%E 1

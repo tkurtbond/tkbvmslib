@@ -1,3 +1,6 @@
+%%s 4/4/16
+%%d D 1.2 06-Sep-24 14:01:36 tkb 2 1
+%%c Switch from tkblib_* and [.LIB] to tkbvmslib_* and [.TKBVMSLIB].
 %%s 0/0/0
 %%d D 1.1 26-Aug-24 12:41:32 tkb 1 0
 %%c Initial checkin.
@@ -6,10 +9,20 @@
 zipvms :
 	today = f$cvtime (,, "DATE")
         set def [-]
+%%D 2
 	zipfile = "tkblib_" + today + ".zip"
+%%E 2
+%%I 2
+	zipfile = "tkbvmslib_" + today + ".zip"
+%%E 2
 	! It's not really accurate unless we start from scratch.
 	if f$search (zipfile) .nes. "" then delete 'zipfile';*/log
+%%D 2
 	zip "-V" -r 'zipfile' login.com lib.dir -x *.map *.log
+%%E 2
+%%I 2
+	zip "-V" -r 'zipfile' tkbvmslib.dir -x *.map *.log
+%%E 2
         write sys$output "Done zipvmsing!"
 
 
@@ -17,10 +30,20 @@ zipvms :
 ziptxt :
 	today = f$cvtime (,, "DATE")
         set def [-]
+%%D 2
 	zipfile = "tkblib_txt_" + today + ".zip"
+%%E 2
+%%I 2
+	zipfile = "tkbvmslib_txt_" + today + ".zip"
+%%E 2
 	! It's not really accurate unless we start from scratch.
 	if f$search (zipfile) .nes. "" then delete 'zipfile';*/log
+%%D 2
 	zip -r 'zipfile' login.com lib.dir -x *.dsc *.key *.obj *.exe *.hlb *.lis *.map *.log
+%%E 2
+%%I 2
+	zip -r 'zipfile' tkbvmslib.dir -x *.dsc *.key *.obj *.exe *.hlb *.lis *.map *.log *.zip *.zoo *.tmp *.icx *.u1 *.u2 lib/exe/* lib/mdist/*
+%%E 2
         write sys$output "Done ziptxting!"
 
 %%E 1
